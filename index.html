@@ -7,6 +7,7 @@
   <meta name="description" content="Keto recipes, pantry matching, weekly meal planner, and shopping list. Lactose-free, sesame-free." />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0b1120" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Walk-In" />
@@ -15,9 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <style>
     body { margin: 0; background: #0b1120; font-family: 'Inter', sans-serif; }
     * { box-sizing: border-box; }
@@ -28,210 +28,264 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-presets="env,react">
-    const { useState, useEffect, useMemo } = React;
+  <script>
+  (function(){
+    "use strict";
+    var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo;
+    var e = React.createElement;
+    var Fragment = React.Fragment;
 
-    // localStorage polyfill matching the window.storage API used in the app
-    window.storage = {
-      get: (key) => {
-        try {
-          const val = localStorage.getItem(key);
-          return Promise.resolve(val !== null ? { value: val } : null);
-        } catch(e) { return Promise.resolve(null); }
-      },
-      set: (key, value) => {
-        try { localStorage.setItem(key, value); return Promise.resolve({ key, value }); }
-        catch(e) { return Promise.resolve(null); }
-      },
-      delete: (key) => {
-        try { localStorage.removeItem(key); return Promise.resolve({ key, deleted: true }); }
-        catch(e) { return Promise.resolve(null); }
-      }
-    };
+    // ---- icon helper ----
+    function svg(props, children){
+      var p = Object.assign({width:props.size||16,height:props.size||16,viewBox:"0 0 24 24",fill:"none",stroke:props.color||"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"}, {});
+      return e("svg", p, children);
+    }
+    var P = function(d){ return e("path",{d:d}); };
+    var BookOpen=function(pr){pr=pr||{};return svg(pr,[P("M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"),P("M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z")].map(function(c,i){return React.cloneElement(c,{key:i});}));};
+    var Flame=function(pr){pr=pr||{};return svg(pr,[P("M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z")].map(function(c,i){return React.cloneElement(c,{key:i});}));};
+    var CalendarDays=function(pr){pr=pr||{};return svg(pr,[e("rect",{key:"r",width:18,height:18,x:3,y:4,rx:2}),e("line",{key:"a",x1:16,x2:16,y1:2,y2:6}),e("line",{key:"b",x1:8,x2:8,y1:2,y2:6}),e("line",{key:"c",x1:3,x2:21,y1:10,y2:10})]);};
+    var ShoppingCart=function(pr){pr=pr||{};return svg(pr,[e("circle",{key:"a",cx:8,cy:21,r:1}),e("circle",{key:"b",cx:19,cy:21,r:1}),React.cloneElement(P("M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"),{key:"c"})]);};
+    var Search=function(pr){pr=pr||{};return svg(pr,[e("circle",{key:"a",cx:11,cy:11,r:8}),React.cloneElement(P("m21 21-4.3-4.3"),{key:"b"})]);};
+    var X=function(pr){pr=pr||{};return svg(pr,[React.cloneElement(P("M18 6 6 18"),{key:"a"}),React.cloneElement(P("m6 6 12 12"),{key:"b"})]);};
+    var Plus=function(pr){pr=pr||{};return svg(pr,[React.cloneElement(P("M5 12h14"),{key:"a"}),React.cloneElement(P("M12 5v14"),{key:"b"})]);};
+    var Check=function(pr){pr=pr||{};return svg({size:pr.size||11,color:pr.color},[e("polyline",{key:"a",points:"20 6 9 17 4 12"})]);};
+    var Clock=function(pr){pr=pr||{};return svg({size:pr.size||12,color:pr.color},[e("circle",{key:"a",cx:12,cy:12,r:10}),e("polyline",{key:"b",points:"12 6 12 12 16 14"})]);};
+    var Trash2=function(pr){pr=pr||{};return svg({size:pr.size||12,color:pr.color},[e("polyline",{key:"a",points:"3 6 5 6 21 6"}),React.cloneElement(P("M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"),{key:"b"})]);};
+    var Backpack=function(pr){pr=pr||{};return svg(pr,[React.cloneElement(P("M4 20V10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"),{key:"a"}),React.cloneElement(P("M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"),{key:"b"}),React.cloneElement(P("M8 21v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"),{key:"c"})]);};
+    var ChevronDown=function(pr){pr=pr||{};return svg(pr,[e("polyline",{key:"a",points:"6 9 12 15 18 9"})]);};
+    var ChevronUp=function(pr){pr=pr||{};return svg(pr,[e("polyline",{key:"a",points:"18 15 12 9 6 15"})]);};
 
-    // Icons (replacing lucide-react)
-    const BookOpen = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
-    const Flame = ({size=16,color="currentColor"}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
-    const CalendarDays = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>;
-    const ShoppingCart = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>;
-    const Search = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
-    const X = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
-    const Plus = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
-    const Check = ({size=11,color="currentColor"}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
-    const Clock = ({size=12}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-    const Trash2 = ({size=12}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>;
-    const Backpack = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M8 21v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"/><path d="M8 10h8"/><path d="M8 18h8"/></svg>;
-    const ChevronDown = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>;
-    const ChevronUp = ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>;
-
-    // ===== DATA =====
-    const MEAL_META = {
-      breakfast: { label: "Breakfast", color: "#f5b942" },
-      lunch:     { label: "Lunch",     color: "#2dd4bf" },
-      dinner:    { label: "Dinner",    color: "#fb7a3c" },
-      snack:     { label: "Snack",     color: "#a3e635" },
-    };
-    const MEALS = ["breakfast","lunch","dinner"];
-    const DAYS  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-    const DAY_NOTE = { Sat: "light day", Sun: "prep day" };
-    const FLAVORS = ["spicy","smoky","garlicky","citrusy","herby","sweet","tangy"];
-    const CATEGORY_ORDER = ["Protein","Produce","Dairy-Free & Fats","Pantry & Spice","Nuts & Safe Seeds"];
-    const CATEGORY_MAP = {
-      "chicken thighs":"Protein","chicken breast":"Protein","ground beef":"Protein","sirloin steak":"Protein","shrimp":"Protein","salmon fillet":"Protein","smoked salmon":"Protein","italian sausage":"Protein","andouille sausage":"Protein","breakfast sausage":"Protein","chorizo":"Protein","eggs":"Protein","collagen protein powder":"Protein",
-      "bell pepper":"Produce","onion":"Produce","green onion":"Produce","garlic":"Produce","ginger":"Produce","celery":"Produce","cucumber":"Produce","tomato":"Produce","zucchini":"Produce","broccoli":"Produce","asparagus":"Produce","green beans":"Produce","spinach":"Produce","cauliflower rice":"Produce","butter lettuce":"Produce","avocado":"Produce","lime":"Produce","lemon":"Produce","cilantro":"Produce","parsley":"Produce","basil":"Produce",
-      "ghee":"Dairy-Free & Fats","olive oil":"Dairy-Free & Fats","coconut milk":"Dairy-Free & Fats","coconut cream":"Dairy-Free & Fats","almond milk":"Dairy-Free & Fats","coconut oil":"Dairy-Free & Fats","coconut butter":"Dairy-Free & Fats","dairy-free cream cheese":"Dairy-Free & Fats","avocado oil mayo":"Dairy-Free & Fats",
-      "buffalo sauce":"Pantry & Spice","coconut aminos":"Pantry & Spice","fish sauce":"Pantry & Spice","red curry paste":"Pantry & Spice","marinara sauce":"Pantry & Spice","capers":"Pantry & Spice","kalamata olives":"Pantry & Spice","hot sauce":"Pantry & Spice","apple cider vinegar":"Pantry & Spice","keto sweetener":"Pantry & Spice","vanilla extract":"Pantry & Spice","almond butter":"Pantry & Spice","cajun seasoning":"Pantry & Spice","taco seasoning":"Pantry & Spice","fajita seasoning":"Pantry & Spice","jerk seasoning":"Pantry & Spice","italian seasoning":"Pantry & Spice","greek seasoning":"Pantry & Spice","garlic-onion blend":"Pantry & Spice","gochugaru":"Pantry & Spice","cinnamon":"Pantry & Spice",
-      "almonds":"Nuts & Safe Seeds","pecans":"Nuts & Safe Seeds","hemp hearts":"Nuts & Safe Seeds","chia seeds":"Nuts & Safe Seeds","coconut flakes":"Nuts & Safe Seeds",
-    };
-    const ing = (name,label) => ({name,label});
-    const RECIPES = [
+    // ---- data ----
+    var MEAL_META={breakfast:{label:"Breakfast",color:"#f5b942"},lunch:{label:"Lunch",color:"#2dd4bf"},dinner:{label:"Dinner",color:"#fb7a3c"},snack:{label:"Snack",color:"#a3e635"}};
+    var MEALS=["breakfast","lunch","dinner"];
+    var DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    var DAY_NOTE={Sat:"light day",Sun:"prep day"};
+    var FLAVORS=["spicy","smoky","garlicky","citrusy","herby","sweet","tangy"];
+    var CATEGORY_ORDER=["Protein","Produce","Dairy-Free & Fats","Pantry & Spice","Nuts & Safe Seeds"];
+    var CATEGORY_MAP={"chicken thighs":"Protein","chicken breast":"Protein","ground beef":"Protein","sirloin steak":"Protein","shrimp":"Protein","salmon fillet":"Protein","smoked salmon":"Protein","italian sausage":"Protein","andouille sausage":"Protein","breakfast sausage":"Protein","chorizo":"Protein","eggs":"Protein","collagen protein powder":"Protein","bell pepper":"Produce","onion":"Produce","green onion":"Produce","garlic":"Produce","ginger":"Produce","celery":"Produce","cucumber":"Produce","tomato":"Produce","zucchini":"Produce","broccoli":"Produce","asparagus":"Produce","green beans":"Produce","spinach":"Produce","cauliflower rice":"Produce","butter lettuce":"Produce","avocado":"Produce","lime":"Produce","lemon":"Produce","cilantro":"Produce","parsley":"Produce","basil":"Produce","ghee":"Dairy-Free & Fats","olive oil":"Dairy-Free & Fats","coconut milk":"Dairy-Free & Fats","coconut cream":"Dairy-Free & Fats","almond milk":"Dairy-Free & Fats","coconut oil":"Dairy-Free & Fats","coconut butter":"Dairy-Free & Fats","dairy-free cream cheese":"Dairy-Free & Fats","avocado oil mayo":"Dairy-Free & Fats","buffalo sauce":"Pantry & Spice","coconut aminos":"Pantry & Spice","fish sauce":"Pantry & Spice","red curry paste":"Pantry & Spice","marinara sauce":"Pantry & Spice","capers":"Pantry & Spice","kalamata olives":"Pantry & Spice","hot sauce":"Pantry & Spice","apple cider vinegar":"Pantry & Spice","keto sweetener":"Pantry & Spice","vanilla extract":"Pantry & Spice","almond butter":"Pantry & Spice","cajun seasoning":"Pantry & Spice","taco seasoning":"Pantry & Spice","fajita seasoning":"Pantry & Spice","jerk seasoning":"Pantry & Spice","italian seasoning":"Pantry & Spice","greek seasoning":"Pantry & Spice","garlic-onion blend":"Pantry & Spice","gochugaru":"Pantry & Spice","cinnamon":"Pantry & Spice","almonds":"Nuts & Safe Seeds","pecans":"Nuts & Safe Seeds","hemp hearts":"Nuts & Safe Seeds","chia seeds":"Nuts & Safe Seeds","coconut flakes":"Nuts & Safe Seeds"};
+    function ing(name,label){return {name:name,label:label};}
+    var RECIPES=[
       {id:"b1",meal:"breakfast",name:"Smoky Chorizo & Pepper Egg Jar",time:10,flavor:["smoky","spicy"],grabGo:true,thermos:true,sundayPrep:false,macros:{cal:420,fat:34,protein:24,netCarb:4},ingredients:[ing("chorizo","4 oz chorizo, casing removed"),ing("eggs","3 eggs"),ing("bell pepper","1/2 bell pepper, diced"),ing("green onion","1 stalk, sliced"),ing("avocado","1/2 avocado"),ing("hot sauce","splash hot sauce")],steps:["Brown chorizo in a skillet, breaking it up, 4 min.","Add bell pepper, soften 2 min.","Whisk eggs, pour in, scramble until just set.","Pack into a jar with avocado, finish with hot sauce."]},
       {id:"b2",meal:"breakfast",name:"Maple-Pecan Chia Pudding Jar",time:5,flavor:["sweet"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:310,fat:24,protein:8,netCarb:6},ingredients:[ing("chia seeds","1/4 cup chia seeds"),ing("almond milk","3/4 cup almond milk"),ing("coconut cream","2 tbsp coconut cream"),ing("pecans","2 tbsp pecans, chopped"),ing("cinnamon","1/2 tsp cinnamon"),ing("keto sweetener","1 tbsp keto sweetener"),ing("vanilla extract","1/2 tsp vanilla")],steps:["Whisk almond milk, coconut cream, sweetener, vanilla, and cinnamon.","Stir in chia seeds, transfer to a jar.","Refrigerate overnight.","Top with pecans before eating."]},
-      {id:"b3",meal:"breakfast",name:"Garlic-Onion Bagel Egg Muffins",time:20,flavor:["smoky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:280,fat:20,protein:19,netCarb:3},ingredients:[ing("eggs","6 eggs"),ing("smoked salmon","3 oz smoked salmon"),ing("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ing("green onion","1 stalk, sliced"),ing("garlic-onion blend","1 tsp garlic-onion seasoning (sesame/poppy-free)")],steps:["Whisk eggs with the garlic-onion blend.","Pour into a greased muffin tin, bake 350°F for 15 min.","Dollop with cream cheese, flake in salmon.","Top with green onion."]},
+      {id:"b3",meal:"breakfast",name:"Garlic-Onion Bagel Egg Muffins",time:20,flavor:["smoky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:280,fat:20,protein:19,netCarb:3},ingredients:[ing("eggs","6 eggs"),ing("smoked salmon","3 oz smoked salmon"),ing("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ing("green onion","1 stalk, sliced"),ing("garlic-onion blend","1 tsp garlic-onion seasoning (sesame/poppy-free)")],steps:["Whisk eggs with the garlic-onion blend.","Pour into a greased muffin tin, bake 350F for 15 min.","Dollop with cream cheese, flake in salmon.","Top with green onion."]},
       {id:"b4",meal:"breakfast",name:"Western NY Diner Skillet",time:12,flavor:["spicy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:460,fat:36,protein:26,netCarb:5},ingredients:[ing("breakfast sausage","4 oz breakfast sausage"),ing("eggs","3 eggs"),ing("bell pepper","1/2 bell pepper, diced"),ing("onion","1/4 onion, diced"),ing("hot sauce","splash hot sauce"),ing("avocado","1/2 avocado")],steps:["Brown sausage 5 min.","Add peppers and onion, soften.","Push aside, scramble eggs in the same pan.","Combine, finish with hot sauce and avocado."]},
       {id:"b5",meal:"breakfast",name:"Iced Mocha Protein Shake",time:5,flavor:["sweet"],grabGo:true,thermos:false,sundayPrep:false,macros:{cal:260,fat:16,protein:20,netCarb:5},ingredients:[ing("almond milk","1 cup almond milk"),ing("coconut cream","1 tbsp coconut cream"),ing("collagen protein powder","1 scoop collagen protein"),ing("cinnamon","pinch cinnamon"),ing("vanilla extract","1/2 tsp vanilla")],steps:["Blend everything with ice until smooth.","Pour over fresh ice and go."]},
       {id:"b6",meal:"breakfast",name:"Smoked Salmon & Avocado Jar",time:8,flavor:["citrusy"],grabGo:true,thermos:true,sundayPrep:false,macros:{cal:380,fat:28,protein:24,netCarb:6},ingredients:[ing("smoked salmon","3 oz smoked salmon"),ing("avocado","1/2 avocado"),ing("cucumber","1/2 cucumber, sliced"),ing("capers","1 tsp capers"),ing("eggs","1 hard-boiled egg"),ing("lemon","wedge of lemon"),ing("olive oil","1 tsp olive oil")],steps:["Layer cucumber, smoked salmon, and sliced egg in a jar.","Top with avocado and capers.","Dress with olive oil and lemon right before eating."]},
-      {id:"b7",meal:"breakfast",name:"Sausage, Spinach & Garlic Egg Bake Bars",time:35,flavor:["garlicky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:240,fat:18,protein:16,netCarb:2},ingredients:[ing("breakfast sausage","8 oz breakfast sausage"),ing("eggs","8 eggs"),ing("spinach","2 cups spinach"),ing("garlic","2 cloves garlic, minced"),ing("ghee","1 tbsp ghee")],steps:["Brown sausage with garlic, wilt in spinach.","Whisk eggs, fold in the sausage mix.","Pour into a greased baking dish, bake 350°F for 25 min.","Cool, then slice into bars for the week."]},
-      {id:"l1",meal:"lunch",name:"Buffalo Chicken Cauli Rice Bowl",time:15,flavor:["spicy","tangy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:520,fat:38,protein:34,netCarb:6},ingredients:[ing("chicken thighs","6 oz chicken thighs, diced"),ing("buffalo sauce","3 tbsp buffalo sauce"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("celery","1 stalk, diced"),ing("avocado oil mayo","1 tbsp avocado oil mayo"),ing("green onion","1 stalk, sliced")],steps:["Sear diced chicken thighs until cooked through, 8 min.","Toss with buffalo sauce.","Sauté cauliflower rice 4 min, plate.","Top with chicken, celery, a drizzle of mayo, and green onion."]},
-      {id:"l2",meal:"lunch",name:"Korean Beef & Broccoli Bowl",time:15,flavor:["spicy","garlicky"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:540,fat:36,protein:33,netCarb:8},ingredients:[ing("ground beef","6 oz ground beef"),ing("coconut aminos","2 tbsp coconut aminos"),ing("garlic","2 cloves garlic, minced"),ing("ginger","1 tsp ginger, grated"),ing("broccoli","1.5 cups broccoli"),ing("gochugaru","1 tsp gochugaru"),ing("green onion","1 stalk, sliced")],steps:["Brown beef with garlic and ginger, 6 min.","Stir in coconut aminos and gochugaru.","Steam or sauté broccoli, combine.","Top with green onion."]},
+      {id:"b7",meal:"breakfast",name:"Sausage, Spinach & Garlic Egg Bake Bars",time:35,flavor:["garlicky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:240,fat:18,protein:16,netCarb:2},ingredients:[ing("breakfast sausage","8 oz breakfast sausage"),ing("eggs","8 eggs"),ing("spinach","2 cups spinach"),ing("garlic","2 cloves garlic, minced"),ing("ghee","1 tbsp ghee")],steps:["Brown sausage with garlic, wilt in spinach.","Whisk eggs, fold in the sausage mix.","Pour into a greased baking dish, bake 350F for 25 min.","Cool, then slice into bars for the week."]},
+      {id:"l1",meal:"lunch",name:"Buffalo Chicken Cauli Rice Bowl",time:15,flavor:["spicy","tangy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:520,fat:38,protein:34,netCarb:6},ingredients:[ing("chicken thighs","6 oz chicken thighs, diced"),ing("buffalo sauce","3 tbsp buffalo sauce"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("celery","1 stalk, diced"),ing("avocado oil mayo","1 tbsp avocado oil mayo"),ing("green onion","1 stalk, sliced")],steps:["Sear diced chicken thighs until cooked through, 8 min.","Toss with buffalo sauce.","Saute cauliflower rice 4 min, plate.","Top with chicken, celery, a drizzle of mayo, and green onion."]},
+      {id:"l2",meal:"lunch",name:"Korean Beef & Broccoli Bowl",time:15,flavor:["spicy","garlicky"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:540,fat:36,protein:33,netCarb:8},ingredients:[ing("ground beef","6 oz ground beef"),ing("coconut aminos","2 tbsp coconut aminos"),ing("garlic","2 cloves garlic, minced"),ing("ginger","1 tsp ginger, grated"),ing("broccoli","1.5 cups broccoli"),ing("gochugaru","1 tsp gochugaru"),ing("green onion","1 stalk, sliced")],steps:["Brown beef with garlic and ginger, 6 min.","Stir in coconut aminos and gochugaru.","Steam or saute broccoli, combine.","Top with green onion."]},
       {id:"l3",meal:"lunch",name:"Greek Lemon Chicken Jar",time:15,flavor:["citrusy","herby"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:470,fat:32,protein:31,netCarb:7},ingredients:[ing("chicken thighs","6 oz chicken thighs"),ing("greek seasoning","1 tbsp Greek seasoning"),ing("lemon","1/2 lemon"),ing("cucumber","1/2 cucumber, diced"),ing("tomato","1/2 cup tomato, diced"),ing("kalamata olives","8 kalamata olives"),ing("olive oil","1 tbsp olive oil")],steps:["Season chicken thighs with Greek seasoning, sear 10 min.","Layer cucumber, tomato, and olives in a jar.","Add sliced chicken on top.","Finish with olive oil and lemon."]},
       {id:"l4",meal:"lunch",name:"Cajun Shrimp Zoodle Bowl",time:12,flavor:["spicy","citrusy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:410,fat:28,protein:30,netCarb:6},ingredients:[ing("shrimp","6 oz shrimp"),ing("cajun seasoning","1 tbsp cajun seasoning"),ing("zucchini","1 zucchini, spiralized"),ing("garlic","1 clove garlic, minced"),ing("ghee","1 tbsp ghee"),ing("lemon","wedge of lemon"),ing("parsley","1 tbsp parsley, chopped")],steps:["Toss shrimp in cajun seasoning.","Sear in ghee with garlic, 2 min per side.","Toss in zoodles just to warm through.","Finish with lemon and parsley."]},
-      {id:"l5",meal:"lunch",name:"Taco Bowl with Cilantro-Lime Cauli Rice",time:15,flavor:["spicy","citrusy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:500,fat:34,protein:32,netCarb:7},ingredients:[ing("ground beef","6 oz ground beef"),ing("taco seasoning","1.5 tbsp taco seasoning"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("avocado","1/2 avocado"),ing("lime","1/2 lime"),ing("cilantro","2 tbsp cilantro, chopped")],steps:["Brown beef with taco seasoning, 6 min.","Sauté cauliflower rice with lime and cilantro.","Plate rice, top with beef and avocado."]},
+      {id:"l5",meal:"lunch",name:"Taco Bowl with Cilantro-Lime Cauli Rice",time:15,flavor:["spicy","citrusy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:500,fat:34,protein:32,netCarb:7},ingredients:[ing("ground beef","6 oz ground beef"),ing("taco seasoning","1.5 tbsp taco seasoning"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("avocado","1/2 avocado"),ing("lime","1/2 lime"),ing("cilantro","2 tbsp cilantro, chopped")],steps:["Brown beef with taco seasoning, 6 min.","Saute cauliflower rice with lime and cilantro.","Plate rice, top with beef and avocado."]},
       {id:"l6",meal:"lunch",name:"Italian Sausage & Pepper Skillet Jar",time:15,flavor:["herby","garlicky"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:480,fat:36,protein:24,netCarb:7},ingredients:[ing("italian sausage","6 oz italian sausage"),ing("bell pepper","1 bell pepper, sliced"),ing("onion","1/2 onion, sliced"),ing("garlic","2 cloves garlic, minced"),ing("marinara sauce","1/3 cup marinara sauce"),ing("italian seasoning","1 tsp Italian seasoning")],steps:["Slice and brown sausage, 6 min.","Add peppers, onion, and garlic, soften.","Stir in marinara and Italian seasoning, simmer 5 min, jar it."]},
       {id:"l7",meal:"lunch",name:"Thai Coconut Curry Chicken Jar",time:18,flavor:["spicy","herby"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:510,fat:38,protein:28,netCarb:8},ingredients:[ing("chicken thighs","6 oz chicken thighs, diced"),ing("red curry paste","1.5 tbsp red curry paste"),ing("coconut milk","1/2 cup coconut milk"),ing("bell pepper","1/2 bell pepper, sliced"),ing("fish sauce","1 tsp fish sauce"),ing("basil","small handful basil"),ing("lime","wedge of lime")],steps:["Sear diced chicken, 5 min.","Stir in curry paste, bloom 1 min.","Add coconut milk, peppers, and fish sauce, simmer 8 min.","Finish with basil and lime."]},
-      {id:"d1",meal:"dinner",name:"Garlic Butter Steak Bites & Asparagus",time:15,flavor:["garlicky","herby"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:560,fat:42,protein:36,netCarb:4},ingredients:[ing("sirloin steak","8 oz sirloin, cubed"),ing("ghee","2 tbsp ghee"),ing("garlic","3 cloves garlic, minced"),ing("asparagus","1 bunch asparagus"),ing("parsley","1 tbsp parsley, chopped")],steps:["Cube steak, pat dry, season well.","Sear in ghee 2-3 min per side, add garlic the last minute.","Sauté asparagus in the same pan.","Rest steak, finish with parsley."]},
-      {id:"d2",meal:"dinner",name:"Sheet-Pan Cajun Sausage & Veggies",time:20,flavor:["spicy","smoky"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:520,fat:40,protein:26,netCarb:7},ingredients:[ing("andouille sausage","8 oz andouille sausage, sliced"),ing("broccoli","1.5 cups broccoli"),ing("bell pepper","1 bell pepper, sliced"),ing("cajun seasoning","1 tbsp cajun seasoning"),ing("olive oil","2 tbsp olive oil")],steps:["Toss sliced sausage and veggies with oil and cajun seasoning.","Roast at 425°F for 18 min, stirring once."]},
-      {id:"d3",meal:"dinner",name:"Pan-Seared Salmon, Lemon-Caper, Green Beans",time:15,flavor:["citrusy","herby"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:480,fat:34,protein:34,netCarb:5},ingredients:[ing("salmon fillet","7 oz salmon fillet"),ing("ghee","1.5 tbsp ghee"),ing("lemon","1/2 lemon"),ing("capers","1 tbsp capers"),ing("garlic","1 clove garlic, minced"),ing("green beans","1.5 cups green beans")],steps:["Sear salmon skin-down in ghee, 4 min per side.","Sauté green beans with garlic in a second pan.","Deglaze the salmon pan with lemon and capers, spoon over."]},
+      {id:"d1",meal:"dinner",name:"Garlic Butter Steak Bites & Asparagus",time:15,flavor:["garlicky","herby"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:560,fat:42,protein:36,netCarb:4},ingredients:[ing("sirloin steak","8 oz sirloin, cubed"),ing("ghee","2 tbsp ghee"),ing("garlic","3 cloves garlic, minced"),ing("asparagus","1 bunch asparagus"),ing("parsley","1 tbsp parsley, chopped")],steps:["Cube steak, pat dry, season well.","Sear in ghee 2-3 min per side, add garlic the last minute.","Saute asparagus in the same pan.","Rest steak, finish with parsley."]},
+      {id:"d2",meal:"dinner",name:"Sheet-Pan Cajun Sausage & Veggies",time:20,flavor:["spicy","smoky"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:520,fat:40,protein:26,netCarb:7},ingredients:[ing("andouille sausage","8 oz andouille sausage, sliced"),ing("broccoli","1.5 cups broccoli"),ing("bell pepper","1 bell pepper, sliced"),ing("cajun seasoning","1 tbsp cajun seasoning"),ing("olive oil","2 tbsp olive oil")],steps:["Toss sliced sausage and veggies with oil and cajun seasoning.","Roast at 425F for 18 min, stirring once."]},
+      {id:"d3",meal:"dinner",name:"Pan-Seared Salmon, Lemon-Caper, Green Beans",time:15,flavor:["citrusy","herby"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:480,fat:34,protein:34,netCarb:5},ingredients:[ing("salmon fillet","7 oz salmon fillet"),ing("ghee","1.5 tbsp ghee"),ing("lemon","1/2 lemon"),ing("capers","1 tbsp capers"),ing("garlic","1 clove garlic, minced"),ing("green beans","1.5 cups green beans")],steps:["Sear salmon skin-down in ghee, 4 min per side.","Saute green beans with garlic in a second pan.","Deglaze the salmon pan with lemon and capers, spoon over."]},
       {id:"d4",meal:"dinner",name:"15-Minute Chicken Fajita Skillet",time:15,flavor:["spicy","citrusy"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:440,fat:26,protein:38,netCarb:7},ingredients:[ing("chicken breast","7 oz chicken breast, sliced thin"),ing("fajita seasoning","1.5 tbsp fajita seasoning"),ing("bell pepper","1 bell pepper, sliced"),ing("onion","1/2 onion, sliced"),ing("avocado","1/2 avocado"),ing("lime","wedge of lime")],steps:["Slice chicken thin, toss with fajita seasoning.","Sear 4 min, add peppers and onion, cook 6 min more.","Finish with lime, top with avocado."]},
       {id:"d5",meal:"dinner",name:"Spicy Korean Beef Lettuce Wraps",time:15,flavor:["spicy","garlicky"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:460,fat:32,protein:30,netCarb:5},ingredients:[ing("ground beef","6 oz ground beef"),ing("coconut aminos","2 tbsp coconut aminos"),ing("gochugaru","1 tsp gochugaru"),ing("garlic","2 cloves garlic, minced"),ing("ginger","1 tsp ginger, grated"),ing("butter lettuce","1 head butter lettuce"),ing("green onion","1 stalk, sliced")],steps:["Brown beef with garlic and ginger.","Stir in coconut aminos and gochugaru.","Spoon into lettuce cups, top with green onion."]},
       {id:"d6",meal:"dinner",name:"Shrimp Scampi Zoodles",time:15,flavor:["garlicky","citrusy"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:420,fat:30,protein:28,netCarb:5},ingredients:[ing("shrimp","6 oz shrimp"),ing("ghee","2 tbsp ghee"),ing("garlic","3 cloves garlic, minced"),ing("lemon","1/2 lemon"),ing("parsley","1 tbsp parsley, chopped"),ing("zucchini","1 zucchini, spiralized"),ing("apple cider vinegar","1 tsp apple cider vinegar")],steps:["Sear shrimp in ghee, 2 min per side, remove.","Add garlic, lemon, and a splash of vinegar to the pan.","Toss in zoodles and shrimp to warm through, finish with parsley."]},
       {id:"d7",meal:"dinner",name:"Jerk Chicken Thighs & Coconut Cauli Rice",time:20,flavor:["spicy","citrusy"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:510,fat:34,protein:36,netCarb:6},ingredients:[ing("chicken thighs","8 oz chicken thighs"),ing("jerk seasoning","1.5 tbsp jerk seasoning"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("coconut milk","1/3 cup coconut milk"),ing("lime","wedge of lime")],steps:["Rub chicken with jerk seasoning (marinate ahead if you can).","Sear 6-7 min per side until cooked through.","Simmer cauliflower rice in coconut milk 5 min.","Plate together, squeeze lime."]},
       {id:"s1",meal:"snack",name:"Hemp Heart Energy Bites",time:10,flavor:["sweet"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:190,fat:16,protein:5,netCarb:3},ingredients:[ing("almond butter","1/2 cup almond butter"),ing("hemp hearts","1/4 cup hemp hearts"),ing("coconut flakes","2 tbsp coconut flakes"),ing("cinnamon","1/2 tsp cinnamon"),ing("keto sweetener","1 tbsp keto sweetener"),ing("vanilla extract","1/2 tsp vanilla")],steps:["Mix everything into a thick dough.","Roll into bites.","Chill 30 min, store in the fridge."]},
-      {id:"s2",meal:"snack",name:"Spicy Roasted Almonds & Pecans",time:15,flavor:["spicy","smoky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:220,fat:20,protein:6,netCarb:3},ingredients:[ing("almonds","1/2 cup almonds"),ing("pecans","1/2 cup pecans"),ing("ghee","1 tbsp ghee, melted"),ing("cajun seasoning","1 tsp cajun seasoning")],steps:["Toss nuts with melted ghee and cajun seasoning.","Roast at 325°F for 12 min, stirring once.","Cool fully before storing."]},
+      {id:"s2",meal:"snack",name:"Spicy Roasted Almonds & Pecans",time:15,flavor:["spicy","smoky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:220,fat:20,protein:6,netCarb:3},ingredients:[ing("almonds","1/2 cup almonds"),ing("pecans","1/2 cup pecans"),ing("ghee","1 tbsp ghee, melted"),ing("cajun seasoning","1 tsp cajun seasoning")],steps:["Toss nuts with melted ghee and cajun seasoning.","Roast at 325F for 12 min, stirring once.","Cool fully before storing."]},
       {id:"s3",meal:"snack",name:"Buffalo Chicken Dip Jar with Celery",time:10,flavor:["spicy","tangy"],grabGo:true,thermos:false,sundayPrep:false,macros:{cal:280,fat:22,protein:16,netCarb:3},ingredients:[ing("chicken thighs","4 oz cooked chicken, shredded"),ing("buffalo sauce","2 tbsp buffalo sauce"),ing("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ing("celery","2 stalks celery")],steps:["Shred cooked chicken, warm with buffalo sauce and cream cheese until melty.","Jar it with celery sticks for dipping."]},
-      {id:"s4",meal:"snack",name:"Coconut-Lime Fat Bombs",time:10,flavor:["sweet","citrusy"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:200,fat:20,protein:2,netCarb:2},ingredients:[ing("coconut butter","1/3 cup coconut butter"),ing("coconut oil","2 tbsp coconut oil"),ing("lime","zest of 1 lime"),ing("coconut flakes","2 tbsp coconut flakes"),ing("keto sweetener","1 tbsp keto sweetener")],steps:["Melt coconut butter and oil together.","Stir in lime zest and sweetener.","Pour into molds, top with coconut flakes, freeze 1 hr."]},
+      {id:"s4",meal:"snack",name:"Coconut-Lime Fat Bombs",time:10,flavor:["sweet","citrusy"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:200,fat:20,protein:2,netCarb:2},ingredients:[ing("coconut butter","1/3 cup coconut butter"),ing("coconut oil","2 tbsp coconut oil"),ing("lime","zest of 1 lime"),ing("coconut flakes","2 tbsp coconut flakes"),ing("keto sweetener","1 tbsp keto sweetener")],steps:["Melt coconut butter and oil together.","Stir in lime zest and sweetener.","Pour into molds, top with coconut flakes, freeze 1 hr."]}
     ];
-    const ALL_INGREDIENT_NAMES = Array.from(new Set(RECIPES.flatMap(r=>r.ingredients.map(i=>i.name)))).sort();
-    const emptyPlan = () => DAYS.reduce((acc,d)=>{acc[d]={breakfast:null,lunch:null,dinner:null};return acc;},{});
+    var ALL_INGREDIENT_NAMES=(function(){var s={};RECIPES.forEach(function(r){r.ingredients.forEach(function(i){s[i.name]=1;});});return Object.keys(s).sort();})();
+    function emptyPlan(){var o={};DAYS.forEach(function(d){o[d]={breakfast:null,lunch:null,dinner:null};});return o;}
 
-    // ===== COMPONENTS =====
-    function MealTag({meal}){const m=MEAL_META[meal];return<span className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-sm"style={{color:m.color,backgroundColor:m.color+"1f"}}>{m.label}</span>;}
-    function MacroReadout({macros,compact}){const items=[["cal",macros.cal,""],["fat",macros.fat,"g"],["pro",macros.protein,"g"],["net c",macros.netCarb,"g"]];return<div className={"flex gap-3 font-mono "+(compact?"text-[10px]":"text-xs")}style={{color:"#8694ab"}}>{items.map(([label,val,unit])=><span key={label}><span className="text-slate-200">{val}{unit}</span> {label}</span>)}</div>;}
-    function FlameGauge({pct}){const color=pct>=80?"#fb7a3c":pct>=50?"#f5b942":"#64748b";return<div className="flex items-center gap-2"><div className="h-1.5 w-full rounded-full overflow-hidden"style={{backgroundColor:"#1c2740"}}><div className="h-full rounded-full"style={{width:pct+"%",background:`linear-gradient(90deg,#f5b942,${color})`}}/></div><span className="font-mono text-xs shrink-0"style={{color}}>{pct}%</span></div>;}
+    // ---- storage ----
+    var storage={
+      get:function(k){try{var v=localStorage.getItem(k);return Promise.resolve(v!==null?{value:v}:null);}catch(x){return Promise.resolve(null);}},
+      set:function(k,v){try{localStorage.setItem(k,v);return Promise.resolve(1);}catch(x){return Promise.resolve(null);}}
+    };
 
-    function RecipeCard({recipe,onOpen}){
-      const m=MEAL_META[recipe.meal];
-      return<button onClick={()=>onOpen(recipe.id)} className="text-left rounded-md overflow-hidden w-full"style={{backgroundColor:"#131c2e",borderLeft:`3px solid ${m.color}`}}><div className="p-4"><div className="flex items-center justify-between mb-2"><MealTag meal={recipe.meal}/><span className="font-mono text-[10px]"style={{color:"#4b5876"}}>№ {recipe.id.toUpperCase()}</span></div><h3 className="font-semibold text-slate-100 leading-snug mb-2"style={{fontFamily:"Oswald,sans-serif",fontSize:"17px"}}>{recipe.name}</h3><div className="flex items-center gap-3 text-xs mb-3"style={{color:"#8694ab"}}><span className="flex items-center gap-1"><Clock size={12}/> {recipe.time} min</span>{recipe.grabGo&&<span>grab & go</span>}{recipe.thermos&&<span>thermos</span>}</div><MacroReadout macros={recipe.macros} compact/></div></button>;
+    // ---- small components ----
+    function MealTag(props){var m=MEAL_META[props.meal];return e("span",{className:"text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-sm",style:{color:m.color,backgroundColor:m.color+"1f"}},m.label);}
+    function MacroReadout(props){var m=props.macros;var items=[["cal",m.cal,""],["fat",m.fat,"g"],["pro",m.protein,"g"],["net c",m.netCarb,"g"]];return e("div",{className:"flex gap-3 font-mono "+(props.compact?"text-[10px]":"text-xs"),style:{color:"#8694ab"}},items.map(function(it){return e("span",{key:it[0]},e("span",{className:"text-slate-200"},it[1]+it[2])," "+it[0]);}));}
+    function FlameGauge(props){var pct=props.pct;var color=pct>=80?"#fb7a3c":pct>=50?"#f5b942":"#64748b";return e("div",{className:"flex items-center gap-2"},e("div",{className:"h-1.5 w-full rounded-full overflow-hidden",style:{backgroundColor:"#1c2740"}},e("div",{className:"h-full rounded-full",style:{width:pct+"%",background:"linear-gradient(90deg,#f5b942,"+color+")"}})),e("span",{className:"font-mono text-xs shrink-0",style:{color:color}},pct+"%"));}
+
+    function RecipeCard(props){var r=props.recipe;var m=MEAL_META[r.meal];
+      return e("button",{onClick:function(){props.onOpen(r.id);},className:"text-left rounded-md overflow-hidden w-full",style:{backgroundColor:"#131c2e",borderLeft:"3px solid "+m.color}},
+        e("div",{className:"p-4"},
+          e("div",{className:"flex items-center justify-between mb-2"},e(MealTag,{meal:r.meal}),e("span",{className:"font-mono text-[10px]",style:{color:"#4b5876"}},"No "+r.id.toUpperCase())),
+          e("h3",{className:"font-semibold text-slate-100 leading-snug mb-2",style:{fontFamily:"Oswald,sans-serif",fontSize:"17px"}},r.name),
+          e("div",{className:"flex items-center gap-3 text-xs mb-3",style:{color:"#8694ab"}},e("span",{className:"flex items-center gap-1"},e(Clock,{size:12})," "+r.time+" min"),r.grabGo?e("span",null,"grab & go"):null,r.thermos?e("span",null,"thermos"):null),
+          e(MacroReadout,{macros:r.macros,compact:true})
+        ));
     }
 
-    function RecipeDetail({recipe,haveIngredients,togglePantryItem,onAssign,onClose}){
-      const [addDay,setAddDay]=useState("Mon");
-      const [addMeal,setAddMeal]=useState(recipe.meal==="snack"?"lunch":recipe.meal);
-      const [justAdded,setJustAdded]=useState(false);
-      const m=MEAL_META[recipe.meal];
-      return<div className="fixed inset-0 z-40 flex justify-end"><div className="absolute inset-0 bg-black/60"onClick={onClose}/><div className="relative w-full max-w-md h-full overflow-y-auto"style={{backgroundColor:"#0f1726"}}><div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4"style={{backgroundColor:"#0f1726",borderBottom:"1px solid #1c2740"}}><MealTag meal={recipe.meal}/><button onClick={onClose} className="p-1 text-slate-400"><X size={20}/></button></div><div className="px-5 pt-5"><span className="font-mono text-[10px]"style={{color:"#4b5876"}}>TICKET № {recipe.id.toUpperCase()}</span><h2 className="mt-1 mb-3 text-slate-100"style={{fontFamily:"Oswald,sans-serif",fontSize:"26px",fontWeight:600}}>{recipe.name}</h2><div className="flex items-center gap-4 text-sm mb-4"style={{color:"#8694ab"}}><span className="flex items-center gap-1"><Clock size={14}/> {recipe.time} min</span>{recipe.flavor.map(f=><span key={f} className="capitalize">{f}</span>)}</div><div className="rounded-md p-3 mb-6"style={{backgroundColor:"#131c2e"}}><MacroReadout macros={recipe.macros}/></div><h4 className="uppercase text-xs tracking-widest mb-3"style={{color:"#4b5876",fontFamily:"Oswald,sans-serif"}}>Ingredients</h4><ul className="mb-6 space-y-2">{recipe.ingredients.map(i=>{const have=haveIngredients.has(i.name);return<li key={i.name}><button onClick={()=>togglePantryItem(i.name)} className="w-full flex items-center gap-3 text-left"><span className="w-4 h-4 rounded-sm flex items-center justify-center shrink-0"style={{backgroundColor:have?m.color:"transparent",border:`1px solid ${have?m.color:"#3a4863"}`}}>{have&&<Check size={11} color="#0b1120"/>}</span><span className="text-sm"style={{color:have?"#e8edf5":"#8694ab"}}>{i.label}</span></button></li>;})}</ul><h4 className="uppercase text-xs tracking-widest mb-3"style={{color:"#4b5876",fontFamily:"Oswald,sans-serif"}}>Method</h4><ol className="mb-8 space-y-3">{recipe.steps.map((s,idx)=><li key={idx} className="flex gap-3 text-sm text-slate-200 leading-relaxed"><span className="font-mono shrink-0"style={{color:m.color}}>{String(idx+1).padStart(2,"0")}</span>{s}</li>)}</ol><div className="rounded-md p-4 mb-8"style={{backgroundColor:"#131c2e"}}><h4 className="uppercase text-xs tracking-widest mb-3"style={{color:"#4b5876",fontFamily:"Oswald,sans-serif"}}>Add to plan</h4><div className="flex gap-2 mb-3"><select value={addDay} onChange={e=>setAddDay(e.target.value)} className="flex-1 rounded-sm px-2 py-2 text-sm"style={{backgroundColor:"#1c2740",color:"#e8edf5",border:"1px solid #2a3650"}}>{DAYS.map(d=><option key={d} value={d}>{d}</option>)}</select><select value={addMeal} onChange={e=>setAddMeal(e.target.value)} className="flex-1 rounded-sm px-2 py-2 text-sm"style={{backgroundColor:"#1c2740",color:"#e8edf5",border:"1px solid #2a3650"}}>{MEALS.map(mm=><option key={mm} value={mm}>{MEAL_META[mm].label}</option>)}</select></div><button onClick={()=>{onAssign(addDay,addMeal,recipe.id);setJustAdded(true);setTimeout(()=>setJustAdded(false),1500);}} className="w-full rounded-sm py-2.5 text-sm font-semibold flex items-center justify-center gap-2"style={{backgroundColor:"#fb7a3c",color:"#0b1120"}}>{justAdded?<>Added <Check size={15}/></>:<>Add to plan <Plus size={15}/></>}</button></div></div></div></div>;
-    }
-
-    function CookbookTab({onOpen}){
-      const [search,setSearch]=useState("");
-      const [mealFilter,setMealFilter]=useState("all");
-      const [flavorFilters,setFlavorFilters]=useState(new Set());
-      const [quick,setQuick]=useState(new Set());
-      const toggleSet=(setter,val)=>setter(prev=>{const n=new Set(prev);n.has(val)?n.delete(val):n.add(val);return n;});
-      const filtered=useMemo(()=>RECIPES.filter(r=>{if(mealFilter!=="all"&&r.meal!==mealFilter)return false;if(search&&!r.name.toLowerCase().includes(search.toLowerCase()))return false;if(flavorFilters.size&&!r.flavor.some(f=>flavorFilters.has(f)))return false;if(quick.has("quick")&&r.time>15)return false;if(quick.has("grabGo")&&!r.grabGo)return false;if(quick.has("thermos")&&!r.thermos)return false;if(quick.has("sundayPrep")&&!r.sundayPrep)return false;return true;}),[search,mealFilter,flavorFilters,quick]);
-      return<div><div className="relative mb-4"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2"style={{color:"#4b5876"}}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search the cookbook…" className="w-full rounded-md pl-9 pr-3 py-2.5 text-sm focus:outline-none"style={{backgroundColor:"#131c2e",color:"#e8edf5",border:"1px solid #1c2740"}}/></div><div className="flex flex-wrap gap-2 mb-3">{["all","breakfast","lunch","dinner","snack"].map(mm=><button key={mm} onClick={()=>setMealFilter(mm)} className="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full"style={mealFilter===mm?{backgroundColor:mm==="all"?"#fb7a3c":MEAL_META[mm].color,color:"#0b1120"}:{backgroundColor:"#131c2e",color:"#8694ab"}}>{mm==="all"?"All":MEAL_META[mm].label}</button>)}</div><div className="flex flex-wrap gap-2 mb-3">{FLAVORS.map(f=><button key={f} onClick={()=>toggleSet(setFlavorFilters,f)} className="text-xs capitalize px-2.5 py-1 rounded-full border"style={flavorFilters.has(f)?{borderColor:"#fb7a3c",color:"#fb7a3c"}:{borderColor:"#2a3650",color:"#8694ab"}}>{f}</button>)}</div><div className="flex flex-wrap gap-2 mb-6">{[["quick","≤15 min"],["grabGo","grab & go"],["thermos","thermos"],["sundayPrep","Sunday prep"]].map(([key,label])=><button key={key} onClick={()=>toggleSet(setQuick,key)} className="text-xs px-2.5 py-1 rounded-full border"style={quick.has(key)?{borderColor:"#2dd4bf",color:"#2dd4bf"}:{borderColor:"#2a3650",color:"#8694ab"}}>{label}</button>)}</div>{filtered.length===0?<p className="text-sm text-center py-12"style={{color:"#4b5876"}}>Nothing on the line matches that.</p>:<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{filtered.map(r=><RecipeCard key={r.id} recipe={r} onOpen={onOpen}/>)}</div>}</div>;
-    }
-
-    function CookTonightTab({haveIngredients,togglePantryItem,onOpen}){
-      const [pantryOpen,setPantryOpen]=useState(true);
-      const ranked=useMemo(()=>RECIPES.map(r=>{const total=r.ingredients.length;const haveCount=r.ingredients.filter(i=>haveIngredients.has(i.name)).length;const pct=total?Math.round(haveCount/total*100):0;const missing=r.ingredients.filter(i=>!haveIngredients.has(i.name));return{...r,pct,haveCount,total,missing};}).sort((a,b)=>b.pct-a.pct||a.time-b.time),[haveIngredients]);
-      const ready=ranked.filter(r=>r.pct>=80),almost=ranked.filter(r=>r.pct>=50&&r.pct<80),trip=ranked.filter(r=>r.pct<50);
-      const grouped=CATEGORY_ORDER.map(cat=>({cat,items:ALL_INGREDIENT_NAMES.filter(n=>(CATEGORY_MAP[n]||"Pantry & Spice")===cat)}));
-      return<div className="space-y-6"><div className="rounded-md"style={{backgroundColor:"#131c2e"}}><button onClick={()=>setPantryOpen(v=>!v)} className="w-full flex items-center justify-between px-4 py-3"><span className="flex items-center gap-2 text-sm font-semibold text-slate-100"><Backpack size={16} style={{color:"#fb7a3c"}}/> What's in the kitchen right now</span>{pantryOpen?<ChevronUp size={16} color="#4b5876"/>:<ChevronDown size={16} color="#4b5876"/>}</button>{pantryOpen&&<div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">{grouped.map(({cat,items})=><div key={cat}><h5 className="text-[10px] uppercase tracking-widest mb-2"style={{color:"#4b5876"}}>{cat}</h5><div className="flex flex-wrap gap-1.5">{items.map(name=>{const have=haveIngredients.has(name);return<button key={name} onClick={()=>togglePantryItem(name)} className="text-xs capitalize px-2 py-1 rounded-full border"style={have?{backgroundColor:"#fb7a3c1f",borderColor:"#fb7a3c",color:"#fb7a3c"}:{borderColor:"#2a3650",color:"#8694ab"}}>{name}</button>;})}</div></div>)}</div>}</div>{[["Ready now",ready,"#fb7a3c"],["Almost there",almost,"#f5b942"],["Need a grocery run",trip,"#64748b"]].map(([title,list,color])=><div key={title}><h4 className="uppercase text-xs tracking-widest mb-2 flex items-center gap-2"style={{color}}><Flame size={13}/> {title} <span className="font-mono"style={{color:"#4b5876"}}>({list.length})</span></h4>{list.length===0?<p className="text-xs mb-4"style={{color:"#4b5876"}}>Nothing here yet.</p>:<div className="space-y-2 mb-4">{list.map(r=><button key={r.id} onClick={()=>onOpen(r.id)} className="w-full text-left rounded-md p-3"style={{backgroundColor:"#131c2e",borderLeft:`3px solid ${MEAL_META[r.meal].color}`}}><div className="flex items-center justify-between mb-2 gap-3"><span className="text-sm font-semibold text-slate-100">{r.name}</span><span className="font-mono text-xs shrink-0"style={{color:"#4b5876"}}>{r.haveCount}/{r.total}</span></div><FlameGauge pct={r.pct}/>{r.missing.length>0&&r.missing.length<=4&&<p className="mt-2 text-xs"style={{color:"#4b5876"}}>missing: {r.missing.map(m=>m.name).join(", ")}</p>}</button>)}</div>}</div>)}</div>;
-    }
-
-    function PlannerTab({mealPlan,assignRecipe,removeRecipe,clearWeek,onOpenPicker}){
-      const filled=DAYS.reduce((acc,d)=>acc+MEALS.filter(m=>mealPlan[d]?.[m]).length,0);
-      return<div><div className="flex items-center justify-between mb-4"><span className="text-sm"style={{color:"#8694ab"}}><span className="font-mono text-slate-100">{filled}</span> / {DAYS.length*MEALS.length} meals planned</span><button onClick={clearWeek} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border"style={{borderColor:"#2a3650",color:"#8694ab"}}><Trash2 size={12}/> Clear week</button></div><div className="overflow-x-auto"><div className="grid gap-2"style={{gridTemplateColumns:`90px repeat(${DAYS.length},minmax(120px,1fr))`,minWidth:"780px"}}><div/>{DAYS.map(d=><div key={d} className="text-center"><div className="text-xs font-semibold uppercase tracking-wide text-slate-200">{d}</div>{DAY_NOTE[d]&&<div className="text-[10px]"style={{color:"#fb7a3c"}}>{DAY_NOTE[d]}</div>}</div>)}{MEALS.map(meal=><React.Fragment key={meal}><div className="flex items-center text-xs font-semibold uppercase tracking-wide"style={{color:MEAL_META[meal].color}}>{MEAL_META[meal].label}</div>{DAYS.map(day=>{const recipeId=mealPlan[day]?.[meal];const recipe=recipeId?RECIPES.find(r=>r.id===recipeId):null;return<div key={day+meal} className="rounded-md p-2 min-h-[64px] flex flex-col justify-center"style={{backgroundColor:"#131c2e"}}>{recipe?<div><p className="text-xs leading-snug text-slate-100 mb-1">{recipe.name}</p><button onClick={()=>removeRecipe(day,meal)} className="text-[10px] flex items-center gap-1"style={{color:"#4b5876"}}><X size={10}/> remove</button></div>:<button onClick={()=>onOpenPicker(day,meal)} className="w-full h-full flex items-center justify-center rounded-sm border border-dashed py-3"style={{borderColor:"#2a3650",color:"#3a4863"}}><Plus size={14}/></button>}</div>;})}</React.Fragment>)}</div></div></div>;
-    }
-
-    function PlannerPicker({day,meal,onPick,onClose}){
-      const [search,setSearch]=useState("");
-      const [filterMeal,setFilterMeal]=useState(meal);
-      const list=RECIPES.filter(r=>(filterMeal==="all"||r.meal===filterMeal)&&r.name.toLowerCase().includes(search.toLowerCase()));
-      return<div className="fixed inset-0 z-50 flex items-center justify-center p-4"><div className="absolute inset-0 bg-black/60"onClick={onClose}/><div className="relative w-full max-w-lg max-h-[80vh] flex flex-col rounded-md"style={{backgroundColor:"#0f1726"}}><div className="flex items-center justify-between px-5 py-4"style={{borderBottom:"1px solid #1c2740"}}><h3 className="text-slate-100 font-semibold">Add to {day} · {MEAL_META[meal].label}</h3><button onClick={onClose}><X size={18} color="#8694ab"/></button></div><div className="px-5 pt-4"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search recipes…" className="w-full rounded-md px-3 py-2 text-sm mb-3"style={{backgroundColor:"#131c2e",color:"#e8edf5",border:"1px solid #1c2740"}}/><div className="flex flex-wrap gap-2 mb-3">{["all","breakfast","lunch","dinner","snack"].map(mm=><button key={mm} onClick={()=>setFilterMeal(mm)} className="text-xs px-2.5 py-1 rounded-full"style={filterMeal===mm?{backgroundColor:"#fb7a3c",color:"#0b1120"}:{backgroundColor:"#131c2e",color:"#8694ab"}}>{mm==="all"?"All":MEAL_META[mm].label}</button>)}</div></div><div className="overflow-y-auto px-5 pb-5 space-y-2">{list.map(r=><button key={r.id} onClick={()=>onPick(r.id)} className="w-full text-left rounded-md p-3 flex items-center justify-between"style={{backgroundColor:"#131c2e",borderLeft:`3px solid ${MEAL_META[r.meal].color}`}}><div><p className="text-sm text-slate-100">{r.name}</p><p className="text-xs"style={{color:"#4b5876"}}>{r.time} min</p></div><Plus size={15} color="#4b5876"/></button>)}{list.length===0&&<p className="text-sm text-center py-8"style={{color:"#4b5876"}}>No matches.</p>}</div></div></div>;
-    }
-
-    function ShoppingTab({mealPlan,haveIngredients,boughtItems,toggleBought,onGoToPlanner}){
-      const [showStocked,setShowStocked]=useState(false);
-      const plannedRecipes=useMemo(()=>{const list=[];DAYS.forEach(day=>MEALS.forEach(meal=>{const id=mealPlan[day]?.[meal];if(id){const r=RECIPES.find(rr=>rr.id===id);if(r)list.push(r);}}));return list;},[mealPlan]);
-      const needed=useMemo(()=>{const map={};plannedRecipes.forEach(recipe=>recipe.ingredients.forEach(i=>{if(haveIngredients.has(i.name))return;if(!map[i.name])map[i.name]={name:i.name,labels:new Set(),category:CATEGORY_MAP[i.name]||"Pantry & Spice"};map[i.name].labels.add(i.label);}));return Object.values(map);},[plannedRecipes,haveIngredients]);
-      const stocked=useMemo(()=>{const map={};plannedRecipes.forEach(recipe=>recipe.ingredients.forEach(i=>{if(!haveIngredients.has(i.name))return;if(!map[i.name])map[i.name]={name:i.name};} ));return Object.values(map);},[plannedRecipes,haveIngredients]);
-      if(plannedRecipes.length===0)return<div className="text-center py-16"><ShoppingCart size={28} className="mx-auto mb-3" color="#2a3650"/><p className="text-sm mb-4"style={{color:"#4b5876"}}>Plan some meals first and the list builds itself.</p><button onClick={onGoToPlanner} className="text-xs px-4 py-2 rounded-full font-semibold"style={{backgroundColor:"#fb7a3c",color:"#0b1120"}}>Go to Planner</button></div>;
-      return<div><p className="text-sm mb-5"style={{color:"#8694ab"}}><span className="font-mono text-slate-100">{needed.length}</span> items to buy for <span className="font-mono text-slate-100">{plannedRecipes.length}</span> planned meals</p>{CATEGORY_ORDER.map(cat=>{const items=needed.filter(i=>i.category===cat);if(items.length===0)return null;return<div key={cat} className="mb-5"><h4 className="uppercase text-xs tracking-widest mb-2"style={{color:"#4b5876"}}>{cat}</h4><div className="space-y-1.5">{items.map(item=>{const checked=boughtItems.has(item.name);return<button key={item.name} onClick={()=>toggleBought(item.name)} className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left"style={{backgroundColor:"#131c2e"}}><span className="w-4 h-4 rounded-sm flex items-center justify-center shrink-0"style={{backgroundColor:checked?"#2dd4bf":"transparent",border:`1px solid ${checked?"#2dd4bf":"#3a4863"}`}}>{checked&&<Check size={11} color="#0b1120"/>}</span><span className="text-sm capitalize"style={{color:checked?"#4b5876":"#e8edf5",textDecoration:checked?"line-through":"none"}}>{item.name} <span style={{color:"#4b5876"}}>· {Array.from(item.labels).join(" + ")}</span></span></button>;})}</div></div>;})} {stocked.length>0&&<div className="mt-6"><button onClick={()=>setShowStocked(v=>!v)} className="flex items-center gap-2 text-xs uppercase tracking-widest mb-2"style={{color:"#4b5876"}}>{showStocked?<ChevronUp size={13}/>:<ChevronDown size={13}/>} Already in the kitchen ({stocked.length})</button>{showStocked&&<div className="flex flex-wrap gap-1.5">{stocked.map(i=><span key={i.name} className="text-xs capitalize px-2.5 py-1 rounded-full"style={{backgroundColor:"#131c2e",color:"#4b5876"}}>{i.name}</span>)}</div>}</div>}</div>;
-    }
-
-    const TABS=[{key:"cookbook",label:"Cookbook",icon:BookOpen},{key:"tonight",label:"Cook Tonight",icon:Flame},{key:"planner",label:"Planner",icon:CalendarDays},{key:"shopping",label:"Shopping",icon:ShoppingCart}];
-
-    function App(){
-      const [tab,setTab]=useState("cookbook");
-      const [isLoading,setIsLoading]=useState(true);
-      const [haveIngredients,setHaveIngredients]=useState(new Set());
-      const [mealPlan,setMealPlan]=useState(emptyPlan());
-      const [boughtItems,setBoughtItems]=useState(new Set());
-      const [selectedId,setSelectedId]=useState(null);
-      const [picker,setPicker]=useState(null);
-
-      useEffect(()=>{
-        let mounted=true;
-        (async()=>{
-          try{
-            const [pantryRes,planRes,boughtRes]=await Promise.allSettled([window.storage.get("walkin-pantry"),window.storage.get("walkin-mealplan"),window.storage.get("walkin-bought")]);
-            if(!mounted)return;
-            if(pantryRes.status==="fulfilled"&&pantryRes.value)setHaveIngredients(new Set(JSON.parse(pantryRes.value.value)));
-            if(planRes.status==="fulfilled"&&planRes.value)setMealPlan(JSON.parse(planRes.value.value));
-            if(boughtRes.status==="fulfilled"&&boughtRes.value)setBoughtItems(new Set(JSON.parse(boughtRes.value.value)));
-          }catch(e){console.error("Load failed",e);}
-          finally{if(mounted)setIsLoading(false);}
-        })();
-        return()=>{mounted=false;};
-      },[]);
-
-      const togglePantryItem=(name)=>setHaveIngredients(prev=>{const next=new Set(prev);next.has(name)?next.delete(name):next.add(name);window.storage.set("walkin-pantry",JSON.stringify(Array.from(next)));return next;});
-      const assignRecipe=(day,meal,recipeId)=>{setMealPlan(prev=>{const next={...prev,[day]:{...prev[day],[meal]:recipeId}};window.storage.set("walkin-mealplan",JSON.stringify(next));return next;});setPicker(null);};
-      const removeRecipe=(day,meal)=>setMealPlan(prev=>{const next={...prev,[day]:{...prev[day],[meal]:null}};window.storage.set("walkin-mealplan",JSON.stringify(next));return next;});
-      const clearWeek=()=>{const next=emptyPlan();setMealPlan(next);window.storage.set("walkin-mealplan",JSON.stringify(next));};
-      const toggleBought=(name)=>setBoughtItems(prev=>{const next=new Set(prev);next.has(name)?next.delete(name):next.add(name);window.storage.set("walkin-bought",JSON.stringify(Array.from(next)));return next;});
-      const selectedRecipe=selectedId?RECIPES.find(r=>r.id===selectedId):null;
-
-      if(isLoading)return<div className="min-h-screen flex items-center justify-center"style={{backgroundColor:"#0b1120"}}><Flame size={28} color="#fb7a3c"/></div>;
-
-      return(
-        <div className="min-h-screen pb-16"style={{backgroundColor:"#0b1120"}}>
-          <header className="px-5 pt-8 pb-5"style={{borderBottom:"1px solid #131c2e"}}>
-            <h1 className="text-slate-100 tracking-tight"style={{fontFamily:"Oswald,sans-serif",fontSize:"28px",fontWeight:700}}>THE WALK-IN</h1>
-            <p className="text-sm mt-1"style={{color:"#4b5876"}}>Keto, flavor-first, built for a 15km day. No lactose, no sesame or related seeds.</p>
-          </header>
-          <nav className="sticky top-0 z-20 flex px-5 gap-1 overflow-x-auto"style={{backgroundColor:"#0b1120",borderBottom:"1px solid #131c2e"}}>
-            {TABS.map(({key,label,icon:Icon})=>(
-              <button key={key} onClick={()=>setTab(key)} className="flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2"style={tab===key?{color:"#fb7a3c",borderColor:"#fb7a3c"}:{color:"#4b5876",borderColor:"transparent"}}>
-                <Icon size={15}/> {label}
-              </button>
-            ))}
-          </nav>
-          <main className="px-5 pt-5 max-w-5xl mx-auto">
-            {tab==="cookbook"&&<CookbookTab onOpen={setSelectedId}/>}
-            {tab==="tonight"&&<CookTonightTab haveIngredients={haveIngredients} togglePantryItem={togglePantryItem} onOpen={setSelectedId}/>}
-            {tab==="planner"&&<PlannerTab mealPlan={mealPlan} assignRecipe={assignRecipe} removeRecipe={removeRecipe} clearWeek={clearWeek} onOpenPicker={(day,meal)=>setPicker({day,meal})}/>}
-            {tab==="shopping"&&<ShoppingTab mealPlan={mealPlan} haveIngredients={haveIngredients} boughtItems={boughtItems} toggleBought={toggleBought} onGoToPlanner={()=>setTab("planner")}/>}
-          </main>
-          {selectedRecipe&&<RecipeDetail recipe={selectedRecipe} haveIngredients={haveIngredients} togglePantryItem={togglePantryItem} onAssign={assignRecipe} onClose={()=>setSelectedId(null)}/>}
-          {picker&&<PlannerPicker day={picker.day} meal={picker.meal} onPick={recipeId=>assignRecipe(picker.day,picker.meal,recipeId)} onClose={()=>setPicker(null)}/>}
-        </div>
+    function RecipeDetail(props){var r=props.recipe;var m=MEAL_META[r.meal];
+      var ad=useState("Mon"),addDay=ad[0],setAddDay=ad[1];
+      var am=useState(r.meal==="snack"?"lunch":r.meal),addMeal=am[0],setAddMeal=am[1];
+      var ja=useState(false),justAdded=ja[0],setJustAdded=ja[1];
+      return e("div",{className:"fixed inset-0 z-40 flex justify-end"},
+        e("div",{className:"absolute inset-0 bg-black/60",onClick:props.onClose}),
+        e("div",{className:"relative w-full max-w-md h-full overflow-y-auto",style:{backgroundColor:"#0f1726"}},
+          e("div",{className:"sticky top-0 z-10 flex items-center justify-between px-5 py-4",style:{backgroundColor:"#0f1726",borderBottom:"1px solid #1c2740"}},e(MealTag,{meal:r.meal}),e("button",{onClick:props.onClose,className:"p-1 text-slate-400"},e(X,{size:20}))),
+          e("div",{className:"px-5 pt-5"},
+            e("span",{className:"font-mono text-[10px]",style:{color:"#4b5876"}},"TICKET No "+r.id.toUpperCase()),
+            e("h2",{className:"mt-1 mb-3 text-slate-100",style:{fontFamily:"Oswald,sans-serif",fontSize:"26px",fontWeight:600}},r.name),
+            e("div",{className:"flex items-center gap-4 text-sm mb-4",style:{color:"#8694ab"}},e("span",{className:"flex items-center gap-1"},e(Clock,{size:14})," "+r.time+" min"),r.flavor.map(function(f){return e("span",{key:f,className:"capitalize"},f);})),
+            e("div",{className:"rounded-md p-3 mb-6",style:{backgroundColor:"#131c2e"}},e(MacroReadout,{macros:r.macros})),
+            e("h4",{className:"uppercase text-xs tracking-widest mb-3",style:{color:"#4b5876",fontFamily:"Oswald,sans-serif"}},"Ingredients"),
+            e("ul",{className:"mb-6 space-y-2"},r.ingredients.map(function(i){var have=props.haveIngredients[i.name];return e("li",{key:i.name},e("button",{onClick:function(){props.togglePantryItem(i.name);},className:"w-full flex items-center gap-3 text-left"},e("span",{className:"w-4 h-4 rounded-sm flex items-center justify-center shrink-0",style:{backgroundColor:have?m.color:"transparent",border:"1px solid "+(have?m.color:"#3a4863")}},have?e(Check,{size:11,color:"#0b1120"}):null),e("span",{className:"text-sm",style:{color:have?"#e8edf5":"#8694ab"}},i.label)));})),
+            e("h4",{className:"uppercase text-xs tracking-widest mb-3",style:{color:"#4b5876",fontFamily:"Oswald,sans-serif"}},"Method"),
+            e("ol",{className:"mb-8 space-y-3"},r.steps.map(function(s,idx){return e("li",{key:idx,className:"flex gap-3 text-sm text-slate-200 leading-relaxed"},e("span",{className:"font-mono shrink-0",style:{color:m.color}},("0"+(idx+1)).slice(-2)),s);})),
+            e("div",{className:"rounded-md p-4 mb-8",style:{backgroundColor:"#131c2e"}},
+              e("h4",{className:"uppercase text-xs tracking-widest mb-3",style:{color:"#4b5876",fontFamily:"Oswald,sans-serif"}},"Add to plan"),
+              e("div",{className:"flex gap-2 mb-3"},
+                e("select",{value:addDay,onChange:function(ev){setAddDay(ev.target.value);},className:"flex-1 rounded-sm px-2 py-2 text-sm",style:{backgroundColor:"#1c2740",color:"#e8edf5",border:"1px solid #2a3650"}},DAYS.map(function(d){return e("option",{key:d,value:d},d);})),
+                e("select",{value:addMeal,onChange:function(ev){setAddMeal(ev.target.value);},className:"flex-1 rounded-sm px-2 py-2 text-sm",style:{backgroundColor:"#1c2740",color:"#e8edf5",border:"1px solid #2a3650"}},MEALS.map(function(mm){return e("option",{key:mm,value:mm},MEAL_META[mm].label);}))
+              ),
+              e("button",{onClick:function(){props.onAssign(addDay,addMeal,r.id);setJustAdded(true);setTimeout(function(){setJustAdded(false);},1500);},className:"w-full rounded-sm py-2.5 text-sm font-semibold flex items-center justify-center gap-2",style:{backgroundColor:"#fb7a3c",color:"#0b1120"}},justAdded?e(Fragment,null,"Added ",e(Check,{size:15})):e(Fragment,null,"Add to plan ",e(Plus,{size:15})))
+            )
+          )
+        )
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+    function FilterPills(arr,active,onClick,activeStyle){
+      return arr.map(function(it){var key=it[0],label=it[1];var on=active(key);return e("button",{key:key,onClick:function(){onClick(key);},className:"text-xs px-2.5 py-1 rounded-full border",style:on?activeStyle:{borderColor:"#2a3650",color:"#8694ab"}},label);});
+    }
+
+    function CookbookTab(props){
+      var s=useState(""),search=s[0],setSearch=s[1];
+      var mf=useState("all"),mealFilter=mf[0],setMealFilter=mf[1];
+      var ff=useState({}),flavorFilters=ff[0],setFlavorFilters=ff[1];
+      var qq=useState({}),quick=qq[0],setQuick=qq[1];
+      function toggle(obj,setter,val){var n=Object.assign({},obj);if(n[val]){delete n[val];}else{n[val]=1;}setter(n);}
+      var filtered=RECIPES.filter(function(r){
+        if(mealFilter!=="all"&&r.meal!==mealFilter)return false;
+        if(search&&r.name.toLowerCase().indexOf(search.toLowerCase())===-1)return false;
+        if(Object.keys(flavorFilters).length&&!r.flavor.some(function(f){return flavorFilters[f];}))return false;
+        if(quick.quick&&r.time>15)return false;
+        if(quick.grabGo&&!r.grabGo)return false;
+        if(quick.thermos&&!r.thermos)return false;
+        if(quick.sundayPrep&&!r.sundayPrep)return false;
+        return true;
+      });
+      return e("div",null,
+        e("div",{className:"relative mb-4"},e("span",{className:"absolute left-3 top-1/2",style:{transform:"translateY(-50%)",color:"#4b5876"}},e(Search,{size:16})),e("input",{value:search,onChange:function(ev){setSearch(ev.target.value);},placeholder:"Search the cookbook...",className:"w-full rounded-md pl-9 pr-3 py-2.5 text-sm focus:outline-none",style:{backgroundColor:"#131c2e",color:"#e8edf5",border:"1px solid #1c2740"}})),
+        e("div",{className:"flex flex-wrap gap-2 mb-3"},["all","breakfast","lunch","dinner","snack"].map(function(mm){var on=mealFilter===mm;return e("button",{key:mm,onClick:function(){setMealFilter(mm);},className:"text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full",style:on?{backgroundColor:mm==="all"?"#fb7a3c":MEAL_META[mm].color,color:"#0b1120"}:{backgroundColor:"#131c2e",color:"#8694ab"}},mm==="all"?"All":MEAL_META[mm].label);})),
+        e("div",{className:"flex flex-wrap gap-2 mb-3"},FilterPills(FLAVORS.map(function(f){return [f,f];}),function(k){return !!flavorFilters[k];},function(k){toggle(flavorFilters,setFlavorFilters,k);},{borderColor:"#fb7a3c",color:"#fb7a3c"})),
+        e("div",{className:"flex flex-wrap gap-2 mb-6"},FilterPills([["quick","<=15 min"],["grabGo","grab & go"],["thermos","thermos"],["sundayPrep","Sunday prep"]],function(k){return !!quick[k];},function(k){toggle(quick,setQuick,k);},{borderColor:"#2dd4bf",color:"#2dd4bf"})),
+        filtered.length===0?e("p",{className:"text-sm text-center py-12",style:{color:"#4b5876"}},"Nothing on the line matches that."):e("div",{className:"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"},filtered.map(function(r){return e(RecipeCard,{key:r.id,recipe:r,onOpen:props.onOpen});}))
+      );
+    }
+
+    function CookTonightTab(props){
+      var po=useState(true),pantryOpen=po[0],setPantryOpen=po[1];
+      var have=props.haveIngredients;
+      var ranked=RECIPES.map(function(r){var total=r.ingredients.length;var haveCount=r.ingredients.filter(function(i){return have[i.name];}).length;var pct=total?Math.round(haveCount/total*100):0;var missing=r.ingredients.filter(function(i){return !have[i.name];});return Object.assign({},r,{pct:pct,haveCount:haveCount,total:total,missing:missing});}).sort(function(a,b){return b.pct-a.pct||a.time-b.time;});
+      var ready=ranked.filter(function(r){return r.pct>=80;}),almost=ranked.filter(function(r){return r.pct>=50&&r.pct<80;}),trip=ranked.filter(function(r){return r.pct<50;});
+      var grouped=CATEGORY_ORDER.map(function(cat){return {cat:cat,items:ALL_INGREDIENT_NAMES.filter(function(n){return (CATEGORY_MAP[n]||"Pantry & Spice")===cat;})};});
+      function section(title,list,color){return e("div",{key:title},e("h4",{className:"uppercase text-xs tracking-widest mb-2 flex items-center gap-2",style:{color:color}},e(Flame,{size:13})," "+title+" ",e("span",{className:"font-mono",style:{color:"#4b5876"}},"("+list.length+")")),list.length===0?e("p",{className:"text-xs mb-4",style:{color:"#4b5876"}},"Nothing here yet."):e("div",{className:"space-y-2 mb-4"},list.map(function(r){return e("button",{key:r.id,onClick:function(){props.onOpen(r.id);},className:"w-full text-left rounded-md p-3",style:{backgroundColor:"#131c2e",borderLeft:"3px solid "+MEAL_META[r.meal].color}},e("div",{className:"flex items-center justify-between mb-2 gap-3"},e("span",{className:"text-sm font-semibold text-slate-100"},r.name),e("span",{className:"font-mono text-xs shrink-0",style:{color:"#4b5876"}},r.haveCount+"/"+r.total)),e(FlameGauge,{pct:r.pct}),(r.missing.length>0&&r.missing.length<=4)?e("p",{className:"mt-2 text-xs",style:{color:"#4b5876"}},"missing: "+r.missing.map(function(mm){return mm.name;}).join(", ")):null);}));}
+      return e("div",{className:"space-y-6"},
+        e("div",{className:"rounded-md",style:{backgroundColor:"#131c2e"}},
+          e("button",{onClick:function(){setPantryOpen(!pantryOpen);},className:"w-full flex items-center justify-between px-4 py-3"},e("span",{className:"flex items-center gap-2 text-sm font-semibold text-slate-100"},e(Backpack,{size:16,color:"#fb7a3c"})," What's in the kitchen right now"),pantryOpen?e(ChevronUp,{size:16,color:"#4b5876"}):e(ChevronDown,{size:16,color:"#4b5876"})),
+          pantryOpen?e("div",{className:"px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4"},grouped.map(function(g){return e("div",{key:g.cat},e("h5",{className:"text-[10px] uppercase tracking-widest mb-2",style:{color:"#4b5876"}},g.cat),e("div",{className:"flex flex-wrap gap-1.5"},g.items.map(function(name){var h=have[name];return e("button",{key:name,onClick:function(){props.togglePantryItem(name);},className:"text-xs capitalize px-2 py-1 rounded-full border",style:h?{backgroundColor:"#fb7a3c1f",borderColor:"#fb7a3c",color:"#fb7a3c"}:{borderColor:"#2a3650",color:"#8694ab"}},name);})));})):null
+        ),
+        section("Ready now",ready,"#fb7a3c"),
+        section("Almost there",almost,"#f5b942"),
+        section("Need a grocery run",trip,"#64748b")
+      );
+    }
+
+    function PlannerTab(props){var mealPlan=props.mealPlan;
+      var filled=0;DAYS.forEach(function(d){MEALS.forEach(function(m){if(mealPlan[d]&&mealPlan[d][m])filled++;});});
+      return e("div",null,
+        e("div",{className:"flex items-center justify-between mb-4"},e("span",{className:"text-sm",style:{color:"#8694ab"}},e("span",{className:"font-mono text-slate-100"},filled)," / "+(DAYS.length*MEALS.length)+" meals planned"),e("button",{onClick:props.clearWeek,className:"flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border",style:{borderColor:"#2a3650",color:"#8694ab"}},e(Trash2,{size:12})," Clear week")),
+        e("div",{className:"overflow-x-auto"},e("div",{className:"grid gap-2",style:{gridTemplateColumns:"90px repeat("+DAYS.length+",minmax(120px,1fr))",minWidth:"780px"}},
+          [e("div",{key:"corner"})].concat(
+            DAYS.map(function(d){return e("div",{key:d,className:"text-center"},e("div",{className:"text-xs font-semibold uppercase tracking-wide text-slate-200"},d),DAY_NOTE[d]?e("div",{className:"text-[10px]",style:{color:"#fb7a3c"}},DAY_NOTE[d]):null);})
+          ).concat(
+            MEALS.map(function(meal){return e(Fragment,{key:meal},
+              e("div",{className:"flex items-center text-xs font-semibold uppercase tracking-wide",style:{color:MEAL_META[meal].color}},MEAL_META[meal].label),
+              DAYS.map(function(day){var rid=mealPlan[day]&&mealPlan[day][meal];var recipe=rid?RECIPES.filter(function(x){return x.id===rid;})[0]:null;return e("div",{key:day+meal,className:"rounded-md p-2 min-h-[64px] flex flex-col justify-center",style:{backgroundColor:"#131c2e"}},recipe?e("div",null,e("p",{className:"text-xs leading-snug text-slate-100 mb-1"},recipe.name),e("button",{onClick:function(){props.removeRecipe(day,meal);},className:"text-[10px] flex items-center gap-1",style:{color:"#4b5876"}},e(X,{size:10})," remove")):e("button",{onClick:function(){props.onOpenPicker(day,meal);},className:"w-full h-full flex items-center justify-center rounded-sm border border-dashed py-3",style:{borderColor:"#2a3650",color:"#3a4863"}},e(Plus,{size:14})));})
+            );})
+          )
+        ))
+      );
+    }
+
+    function PlannerPicker(props){
+      var s=useState(""),search=s[0],setSearch=s[1];
+      var fm=useState(props.meal),filterMeal=fm[0],setFilterMeal=fm[1];
+      var list=RECIPES.filter(function(r){return (filterMeal==="all"||r.meal===filterMeal)&&r.name.toLowerCase().indexOf(search.toLowerCase())!==-1;});
+      return e("div",{className:"fixed inset-0 z-50 flex items-center justify-center p-4"},
+        e("div",{className:"absolute inset-0 bg-black/60",onClick:props.onClose}),
+        e("div",{className:"relative w-full max-w-lg max-h-[80vh] flex flex-col rounded-md",style:{backgroundColor:"#0f1726"}},
+          e("div",{className:"flex items-center justify-between px-5 py-4",style:{borderBottom:"1px solid #1c2740"}},e("h3",{className:"text-slate-100 font-semibold"},"Add to "+props.day+" - "+MEAL_META[props.meal].label),e("button",{onClick:props.onClose},e(X,{size:18,color:"#8694ab"}))),
+          e("div",{className:"px-5 pt-4"},e("input",{value:search,onChange:function(ev){setSearch(ev.target.value);},placeholder:"Search recipes...",className:"w-full rounded-md px-3 py-2 text-sm mb-3",style:{backgroundColor:"#131c2e",color:"#e8edf5",border:"1px solid #1c2740"}}),e("div",{className:"flex flex-wrap gap-2 mb-3"},["all","breakfast","lunch","dinner","snack"].map(function(mm){var on=filterMeal===mm;return e("button",{key:mm,onClick:function(){setFilterMeal(mm);},className:"text-xs px-2.5 py-1 rounded-full",style:on?{backgroundColor:"#fb7a3c",color:"#0b1120"}:{backgroundColor:"#131c2e",color:"#8694ab"}},mm==="all"?"All":MEAL_META[mm].label);}))),
+          e("div",{className:"overflow-y-auto px-5 pb-5 space-y-2"},list.map(function(r){return e("button",{key:r.id,onClick:function(){props.onPick(r.id);},className:"w-full text-left rounded-md p-3 flex items-center justify-between",style:{backgroundColor:"#131c2e",borderLeft:"3px solid "+MEAL_META[r.meal].color}},e("div",null,e("p",{className:"text-sm text-slate-100"},r.name),e("p",{className:"text-xs",style:{color:"#4b5876"}},r.time+" min")),e(Plus,{size:15,color:"#4b5876"}));}),list.length===0?e("p",{className:"text-sm text-center py-8",style:{color:"#4b5876"}},"No matches."):null)
+        )
+      );
+    }
+
+    function ShoppingTab(props){var mealPlan=props.mealPlan,have=props.haveIngredients,bought=props.boughtItems;
+      var ss=useState(false),showStocked=ss[0],setShowStocked=ss[1];
+      var plannedRecipes=[];DAYS.forEach(function(day){MEALS.forEach(function(meal){var id=mealPlan[day]&&mealPlan[day][meal];if(id){var r=RECIPES.filter(function(x){return x.id===id;})[0];if(r)plannedRecipes.push(r);}});});
+      var neededMap={};plannedRecipes.forEach(function(r){r.ingredients.forEach(function(i){if(have[i.name])return;if(!neededMap[i.name])neededMap[i.name]={name:i.name,labels:{},category:CATEGORY_MAP[i.name]||"Pantry & Spice"};neededMap[i.name].labels[i.label]=1;});});
+      var needed=Object.keys(neededMap).map(function(k){return neededMap[k];});
+      var stockedMap={};plannedRecipes.forEach(function(r){r.ingredients.forEach(function(i){if(have[i.name])stockedMap[i.name]=1;});});
+      var stocked=Object.keys(stockedMap);
+      if(plannedRecipes.length===0)return e("div",{className:"text-center py-16"},e("div",{className:"flex justify-center mb-3"},e(ShoppingCart,{size:28,color:"#2a3650"})),e("p",{className:"text-sm mb-4",style:{color:"#4b5876"}},"Plan some meals first and the list builds itself."),e("button",{onClick:props.onGoToPlanner,className:"text-xs px-4 py-2 rounded-full font-semibold",style:{backgroundColor:"#fb7a3c",color:"#0b1120"}},"Go to Planner"));
+      return e("div",null,
+        e("p",{className:"text-sm mb-5",style:{color:"#8694ab"}},e("span",{className:"font-mono text-slate-100"},needed.length)," items to buy for ",e("span",{className:"font-mono text-slate-100"},plannedRecipes.length)," planned meals"),
+        CATEGORY_ORDER.map(function(cat){var items=needed.filter(function(i){return i.category===cat;});if(items.length===0)return null;return e("div",{key:cat,className:"mb-5"},e("h4",{className:"uppercase text-xs tracking-widest mb-2",style:{color:"#4b5876"}},cat),e("div",{className:"space-y-1.5"},items.map(function(item){var checked=bought[item.name];return e("button",{key:item.name,onClick:function(){props.toggleBought(item.name);},className:"w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left",style:{backgroundColor:"#131c2e"}},e("span",{className:"w-4 h-4 rounded-sm flex items-center justify-center shrink-0",style:{backgroundColor:checked?"#2dd4bf":"transparent",border:"1px solid "+(checked?"#2dd4bf":"#3a4863")}},checked?e(Check,{size:11,color:"#0b1120"}):null),e("span",{className:"text-sm capitalize",style:{color:checked?"#4b5876":"#e8edf5",textDecoration:checked?"line-through":"none"}},item.name," ",e("span",{style:{color:"#4b5876"}},"- "+Object.keys(item.labels).join(" + "))));})));}),
+        stocked.length>0?e("div",{className:"mt-6"},e("button",{onClick:function(){setShowStocked(!showStocked);},className:"flex items-center gap-2 text-xs uppercase tracking-widest mb-2",style:{color:"#4b5876"}},showStocked?e(ChevronUp,{size:13}):e(ChevronDown,{size:13})," Already in the kitchen ("+stocked.length+")"),showStocked?e("div",{className:"flex flex-wrap gap-1.5"},stocked.map(function(n){return e("span",{key:n,className:"text-xs capitalize px-2.5 py-1 rounded-full",style:{backgroundColor:"#131c2e",color:"#4b5876"}},n);})):null):null
+      );
+    }
+
+    var TABS=[{key:"cookbook",label:"Cookbook",icon:BookOpen},{key:"tonight",label:"Cook Tonight",icon:Flame},{key:"planner",label:"Planner",icon:CalendarDays},{key:"shopping",label:"Shopping",icon:ShoppingCart}];
+
+    function App(){
+      var t=useState("cookbook"),tab=t[0],setTab=t[1];
+      var l=useState(true),isLoading=l[0],setIsLoading=l[1];
+      var hi=useState({}),have=hi[0],setHave=hi[1];
+      var mp=useState(emptyPlan()),mealPlan=mp[0],setMealPlan=mp[1];
+      var bi=useState({}),bought=bi[0],setBought=bi[1];
+      var si=useState(null),selectedId=si[0],setSelectedId=si[1];
+      var pk=useState(null),picker=pk[0],setPicker=pk[1];
+
+      useEffect(function(){
+        var mounted=true;
+        Promise.all([storage.get("walkin-pantry"),storage.get("walkin-mealplan"),storage.get("walkin-bought")]).then(function(res){
+          if(!mounted)return;
+          try{ if(res[0]){var arr=JSON.parse(res[0].value);var o={};arr.forEach(function(n){o[n]=1;});setHave(o);} }catch(x){}
+          try{ if(res[1]){setMealPlan(JSON.parse(res[1].value));} }catch(x){}
+          try{ if(res[2]){var arr2=JSON.parse(res[2].value);var o2={};arr2.forEach(function(n){o2[n]=1;});setBought(o2);} }catch(x){}
+        }).then(function(){if(mounted)setIsLoading(false);});
+        return function(){mounted=false;};
+      },[]);
+
+      function togglePantryItem(name){setHave(function(prev){var n=Object.assign({},prev);if(n[name]){delete n[name];}else{n[name]=1;}storage.set("walkin-pantry",JSON.stringify(Object.keys(n)));return n;});}
+      function assignRecipe(day,meal,rid){setMealPlan(function(prev){var n=Object.assign({},prev);n[day]=Object.assign({},prev[day]);n[day][meal]=rid;storage.set("walkin-mealplan",JSON.stringify(n));return n;});setPicker(null);}
+      function removeRecipe(day,meal){setMealPlan(function(prev){var n=Object.assign({},prev);n[day]=Object.assign({},prev[day]);n[day][meal]=null;storage.set("walkin-mealplan",JSON.stringify(n));return n;});}
+      function clearWeek(){var n=emptyPlan();setMealPlan(n);storage.set("walkin-mealplan",JSON.stringify(n));}
+      function toggleBought(name){setBought(function(prev){var n=Object.assign({},prev);if(n[name]){delete n[name];}else{n[name]=1;}storage.set("walkin-bought",JSON.stringify(Object.keys(n)));return n;});}
+
+      var selectedRecipe=selectedId?RECIPES.filter(function(r){return r.id===selectedId;})[0]:null;
+
+      if(isLoading)return e("div",{className:"min-h-screen flex items-center justify-center",style:{backgroundColor:"#0b1120"}},e(Flame,{size:28,color:"#fb7a3c"}));
+
+      return e("div",{className:"min-h-screen pb-16",style:{backgroundColor:"#0b1120"}},
+        e("header",{className:"px-5 pt-8 pb-5",style:{borderBottom:"1px solid #131c2e"}},e("h1",{className:"text-slate-100 tracking-tight",style:{fontFamily:"Oswald,sans-serif",fontSize:"28px",fontWeight:700}},"THE WALK-IN"),e("p",{className:"text-sm mt-1",style:{color:"#4b5876"}},"Keto, flavor-first, built for a 15km day. No lactose, no sesame or related seeds.")),
+        e("nav",{className:"sticky top-0 z-20 flex px-5 gap-1 overflow-x-auto",style:{backgroundColor:"#0b1120",borderBottom:"1px solid #131c2e"}},TABS.map(function(tb){var on=tab===tb.key;return e("button",{key:tb.key,onClick:function(){setTab(tb.key);},className:"flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2",style:on?{color:"#fb7a3c",borderColor:"#fb7a3c"}:{color:"#4b5876",borderColor:"transparent"}},e(tb.icon,{size:15})," "+tb.label);})),
+        e("main",{className:"px-5 pt-5 max-w-5xl mx-auto"},
+          tab==="cookbook"?e(CookbookTab,{onOpen:setSelectedId}):null,
+          tab==="tonight"?e(CookTonightTab,{haveIngredients:have,togglePantryItem:togglePantryItem,onOpen:setSelectedId}):null,
+          tab==="planner"?e(PlannerTab,{mealPlan:mealPlan,assignRecipe:assignRecipe,removeRecipe:removeRecipe,clearWeek:clearWeek,onOpenPicker:function(day,meal){setPicker({day:day,meal:meal});}}):null,
+          tab==="shopping"?e(ShoppingTab,{mealPlan:mealPlan,haveIngredients:have,boughtItems:bought,toggleBought:toggleBought,onGoToPlanner:function(){setTab("planner");}}):null
+        ),
+        selectedRecipe?e(RecipeDetail,{recipe:selectedRecipe,haveIngredients:have,togglePantryItem:togglePantryItem,onAssign:assignRecipe,onClose:function(){setSelectedId(null);}}):null,
+        picker?e(PlannerPicker,{day:picker.day,meal:picker.meal,onPick:function(rid){assignRecipe(picker.day,picker.meal,rid);},onClose:function(){setPicker(null);}}):null
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+  })();
   </script>
   <script>
     if('serviceWorker' in navigator){
