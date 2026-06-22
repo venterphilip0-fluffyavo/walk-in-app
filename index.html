@@ -1,345 +1,1062 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>The Walk-In — Keto Kitchen</title>
-  <meta name="description" content="Keto recipes, pantry matching, weekly meal planner, and shopping list. Lactose-free, sesame-free." />
-  <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#0b1120" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Walk-In" />
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
-  <link rel="icon" href="./icons/favicon.png" type="image/png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <style>
-    :root { --bg:#0b1120; --card:#131c2e; --panel:#0f1726; --line:#1c2740; --line2:#2a3650; --muted:#8694ab; --dim:#4b5876; --dim2:#3a4863; --text:#e8edf5; --orange:#fb7a3c; --yellow:#f5b942; --teal:#2dd4bf; --green:#a3e635; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
-    button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
-    input, select { font-family: inherit; }
-    ol, ul { list-style: none; }
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    .oswald { font-family: 'Oswald', sans-serif; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    .min-h-screen { min-height: 100vh; }
-    .flex { display: flex; }
-    .grid { display: grid; }
-    .items-center { align-items: center; }
-    .justify-center { justify-content: center; }
-    .justify-between { justify-content: space-between; }
-    .flex-wrap { flex-wrap: wrap; }
-    .flex-col { flex-direction: column; }
-    .flex-1 { flex: 1; }
-    .shrink-0 { flex-shrink: 0; }
-    .text-center { text-align: center; }
-    .capitalize { text-transform: capitalize; }
-    .uppercase { text-transform: uppercase; }
-    .relative { position: relative; }
-    .absolute { position: absolute; }
-    .fixed { position: fixed; }
-    .sticky { position: sticky; }
-    .hidden { display: none; }
-    .w-full { width: 100%; }
-    .h-full { height: 100%; }
-    .overflow-x-auto { overflow-x: auto; }
-    .overflow-y-auto { overflow-y: auto; }
-    .overflow-hidden { overflow: hidden; }
-    .cursor-pointer { cursor: pointer; }
-    .transition { transition: all 0.15s ease; }
-    select { background: var(--line); color: var(--text); border: 1px solid var(--line2); border-radius: 4px; padding: 8px; font-size: 14px; }
-    input[type=text], input.search { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; width: 100%; }
-    .tab-btn { display: flex; align-items: center; gap: 8px; padding: 14px 16px; font-size: 14px; font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent; color: var(--dim); }
-    .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
-    .pill { font-size: 12px; padding: 4px 10px; border-radius: 9999px; border: 1px solid var(--line2); color: var(--muted); }
-    .card { background: var(--card); border-radius: 8px; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); }
-    .grid-recipes { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 768px) { .grid-recipes { grid-template-columns: 1fr 1fr; } }
-    @media (min-width: 1024px) { .grid-recipes { grid-template-columns: 1fr 1fr 1fr; } }
-    .pantry-grid { display: grid; grid-template-columns: 1fr; gap: 16px 24px; }
-    @media (min-width: 640px) { .pantry-grid { grid-template-columns: 1fr 1fr; } }
-    @media (min-width: 1024px) { .pantry-grid { grid-template-columns: 1fr 1fr 1fr; } }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script>
-  (function(){
-    "use strict";
-    var h = React.createElement;
-    var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, Fragment = React.Fragment;
+import { useState, useMemo } from "react";
 
-    // ---- tiny SVG icon helper ----
-    function icon(paths, size, stroke){
-      size = size || 16;
-      return h("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:stroke||"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},paths.map(function(p,i){
-        if(p.t==="path") return h("path",{key:i,d:p.d});
-        if(p.t==="circle") return h("circle",{key:i,cx:p.cx,cy:p.cy,r:p.r});
-        if(p.t==="rect") return h("rect",{key:i,x:p.x,y:p.y,width:p.w,height:p.hh,rx:p.rx});
-        if(p.t==="line") return h("line",{key:i,x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2});
-        if(p.t==="poly") return h("polyline",{key:i,points:p.p});
-        return null;
-      }));
-    }
-    var IBook=[{t:"path",d:"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"},{t:"path",d:"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"}];
-    var IFlame=[{t:"path",d:"M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"}];
-    var ICal=[{t:"rect",x:3,y:4,w:18,hh:18,rx:2},{t:"line",x1:16,y1:2,x2:16,y2:6},{t:"line",x1:8,y1:2,x2:8,y2:6},{t:"line",x1:3,y1:10,x2:21,y2:10}];
-    var ICart=[{t:"circle",cx:8,cy:21,r:1},{t:"circle",cx:19,cy:21,r:1},{t:"path",d:"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}];
-    var ISearch=[{t:"circle",cx:11,cy:11,r:8},{t:"path",d:"m21 21-4.3-4.3"}];
-    var IX=[{t:"path",d:"M18 6 6 18"},{t:"path",d:"m6 6 12 12"}];
-    var IPlus=[{t:"path",d:"M5 12h14"},{t:"path",d:"M12 5v14"}];
-    var ICheck=[{t:"poly",p:"20 6 9 17 4 12"}];
-    var IClock=[{t:"circle",cx:12,cy:12,r:10},{t:"poly",p:"12 6 12 12 16 14"}];
-    var ITrash=[{t:"poly",p:"3 6 5 6 21 6"},{t:"path",d:"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"}];
-    var IPack=[{t:"path",d:"M4 20V10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"},{t:"path",d:"M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"},{t:"path",d:"M8 21v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"}];
-    var IDown=[{t:"poly",p:"6 9 12 15 18 9"}];
-    var IUp=[{t:"poly",p:"18 15 12 9 6 15"}];
+// ─── COLOUR MAP ───────────────────────────────────────────────────────────────
+const cMap = {
+  rose:    { bg: "bg-rose-500/10",    border: "border-rose-500/20",    badge: "bg-rose-500/20 text-rose-300 border border-rose-500/30",       header: "text-rose-300",    dot: "bg-rose-400",    check: "bg-rose-500"    },
+  orange:  { bg: "bg-orange-500/10",  border: "border-orange-500/20",  badge: "bg-orange-500/20 text-orange-300 border border-orange-500/30", header: "text-orange-300",  dot: "bg-orange-400",  check: "bg-orange-500"  },
+  amber:   { bg: "bg-amber-500/10",   border: "border-amber-500/20",   badge: "bg-amber-500/20 text-amber-300 border border-amber-500/30",     header: "text-amber-300",   dot: "bg-amber-400",   check: "bg-amber-500"   },
+  sky:     { bg: "bg-sky-500/10",     border: "border-sky-500/20",     badge: "bg-sky-500/20 text-sky-300 border border-sky-500/30",           header: "text-sky-300",     dot: "bg-sky-400",     check: "bg-sky-500"     },
+  violet:  { bg: "bg-violet-500/10",  border: "border-violet-500/20",  badge: "bg-violet-500/20 text-violet-300 border border-violet-500/30", header: "text-violet-300",  dot: "bg-violet-400",  check: "bg-violet-500"  },
+  pink:    { bg: "bg-pink-500/10",    border: "border-pink-500/20",    badge: "bg-pink-500/20 text-pink-300 border border-pink-500/30",         header: "text-pink-300",    dot: "bg-pink-400",    check: "bg-pink-500"    },
+  yellow:  { bg: "bg-yellow-500/10",  border: "border-yellow-500/20",  badge: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30", header: "text-yellow-300",  dot: "bg-yellow-400",  check: "bg-yellow-500"  },
+  emerald: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", badge: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30", header: "text-emerald-300", dot: "bg-emerald-400", check: "bg-emerald-500" },
+  teal:    { bg: "bg-teal-500/10",    border: "border-teal-500/20",    badge: "bg-teal-500/20 text-teal-300 border border-teal-500/30",         header: "text-teal-300",    dot: "bg-teal-400",    check: "bg-teal-500"    },
+  slate:   { bg: "bg-slate-500/10",   border: "border-slate-500/20",   badge: "bg-slate-500/20 text-slate-300 border border-slate-500/30",     header: "text-slate-300",   dot: "bg-slate-400",   check: "bg-slate-500"   },
+  cyan:    { bg: "bg-cyan-500/10",    border: "border-cyan-500/20",    badge: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30",         header: "text-cyan-300",    dot: "bg-cyan-400",    check: "bg-cyan-500"    },
+};
 
-    // ---- storage (localStorage) ----
-    var storage = {
-      get: function(k){ try{ var v=localStorage.getItem(k); return v!==null?{value:v}:null; }catch(e){ return null; } },
-      set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-    };
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── DATA: MEAL PLAN ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const mealWeeks = [
+  { label: "Week 1", days: [
+    { day:"Monday",   type:"weekday",       breakfast:{meal:"Bacon, Egg & Chive Savoury Jar",emoji:"🥓",note:"Prep Sunday"},      lunch:{meal:"Grilled chicken thigh salad — avocado, cucumber, cherry tomatoes, olive oil & lemon",emoji:"🥗",note:"Reheat chicken"}, dinner:{meal:"Ribeye steak, garlic herb butter, sautéed zucchini",emoji:"🥩",note:"~15 min"}, fruit:"Handful of fresh strawberries" },
+    { day:"Tuesday",  type:"weekday",       breakfast:{meal:"Southwest Chorizo Savoury Jar",emoji:"🌶️",note:"Prep Sunday"},        lunch:{meal:"Thermos: chorizo & pepper soup — bone broth, coconut cream, smoked paprika",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Chorizo & egg scramble, sautéed spinach, fresh salsa",emoji:"🍳",note:"10 min"}, fruit:"Raspberries with coconut cream" },
+    { day:"Wednesday",type:"weekday",       breakfast:{meal:"Chocolate PB Sweet Jar",emoji:"🍫",note:"Prep Sunday"},                lunch:{meal:"Lettuce wraps — turkey, cream cheese, roasted peppers, fresh basil",emoji:"🥬",note:"Cold"}, dinner:{meal:"Zucchini noodles, ground beef bolognese, parmesan",emoji:"🍝",note:"15 min"}, fruit:"Small bowl watermelon cubes" },
+    { day:"Thursday", type:"weekday",       breakfast:{meal:"Italian Herb & Prosciutto Savoury Jar",emoji:"🧀",note:"Prep Sunday"}, lunch:{meal:"Charcuterie box — salami, hard cheese, olives, cherry tomatoes, cucumber",emoji:"🫒",note:"Cold"}, dinner:{meal:"Chicken thighs (pre-cooked), roasted veg, lemon herb sauce",emoji:"🍗",note:"10 min reheat"}, fruit:"Blueberries with almond butter drizzle" },
+    { day:"Friday",   type:"weekday",       breakfast:{meal:"Berry Vanilla Cream Sweet Jar",emoji:"🫐",note:"Prep Sunday"},         lunch:{meal:"Thermos: ground beef & cauliflower soup, bone broth, garlic, fresh herbs",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Bunless smash burger — bacon, avocado, good cheese, fried egg",emoji:"🍔",note:"Treat yourself!"}, fruit:"Peach slices with mint" },
+    { day:"Saturday", type:"weekend-light", breakfast:{meal:"Black coffee + 2 soft boiled eggs, avocado, sea salt & chilli flakes",emoji:"☕",note:"Light day"}, lunch:{meal:"Big Greek salad — chicken, feta, olives, cucumber, red onion, olive oil",emoji:"🥗",note:"Fresh"}, dinner:{meal:"Pan-seared salmon, asparagus, lemon butter sauce",emoji:"🐟",note:"20 min"}, fruit:"Mixed berries" },
+    { day:"Sunday",   type:"prep-day",      breakfast:{meal:"Avocado & bacon omelette, fresh herbs, black coffee",emoji:"🍳",note:"Proper sit-down"}, lunch:{meal:"Leftover salmon or cold cuts + salad — keep it easy",emoji:"🥗",note:"Simple"}, dinner:{meal:"Slow-cooked pulled pork shoulder — eat some, save some for next week",emoji:"🍖",note:"Prep day reward"}, fruit:"Strawberries with whipped coconut cream", prepNote:"🗓️ PREP: Batch bacon, soft boil 6 eggs, cook chorizo, grill chicken thighs, roast sheet pan veg, assemble 5 jars" },
+  ]},
+  { label: "Week 2", days: [
+    { day:"Monday",   type:"weekday",       breakfast:{meal:"Bacon, Egg & Chive Savoury Jar",emoji:"🥓",note:"Prep Sunday"},         lunch:{meal:"Pulled pork lettuce cups, avocado, fresh cilantro, lime",emoji:"🥬",note:"Reheat pork"}, dinner:{meal:"Cauliflower fried rice — eggs, bacon bits, green onion, coconut aminos",emoji:"🍳",note:"20 min"}, fruit:"Blackberries" },
+    { day:"Tuesday",  type:"weekday",       breakfast:{meal:"Toasted Coconut & Cinnamon Sweet Jar",emoji:"🥥",note:"Prep Sunday"},    lunch:{meal:"Thermos: pulled pork & cauliflower soup, smoked paprika broth",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Lamb chops, mint chimichurri, sautéed green beans with garlic butter",emoji:"🍖",note:"15 min"}, fruit:"Raspberries" },
+    { day:"Wednesday",type:"weekday",       breakfast:{meal:"Southwest Chorizo Savoury Jar",emoji:"🌶️",note:"Prep Sunday"},          lunch:{meal:"Charcuterie box — prosciutto, aged cheddar, olives, cherry tomatoes, cucumber",emoji:"🫒",note:"Cold"}, dinner:{meal:"Chicken thigh stir-fry — coconut aminos, ginger, garlic, zucchini, bok choy",emoji:"🍗",note:"15 min"}, fruit:"Sliced peach" },
+    { day:"Thursday", type:"weekday",       breakfast:{meal:"Chocolate PB Sweet Jar",emoji:"🍫",note:"Prep Sunday"},                  lunch:{meal:"Big protein salad — hard boiled eggs, bacon, avocado, spinach, olive oil & dijon",emoji:"🥗",note:"Cold"}, dinner:{meal:"Bunless turkey burgers, avocado, tomato, lettuce, side of coleslaw (no sugar)",emoji:"🍔",note:"20 min"}, fruit:"Watermelon cubes with mint" },
+    { day:"Friday",   type:"weekday",       breakfast:{meal:"Italian Herb & Prosciutto Savoury Jar",emoji:"🧀",note:"Prep Sunday"},   lunch:{meal:"Thermos: egg drop soup — bone broth, eggs, ginger, green onion, sesame-free",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Pan-seared scallops, cauliflower mash, lemon brown butter",emoji:"🍤",note:"Treat Friday!"}, fruit:"Strawberries & coconut cream" },
+    { day:"Saturday", type:"weekend-light", breakfast:{meal:"Smoked salmon, cream cheese, capers, red onion, cucumber rounds",emoji:"🐟",note:"Light day"}, lunch:{meal:"Grilled chicken Caesar — no croutons, parmesan, anchovy dressing",emoji:"🥗",note:"Fresh"}, dinner:{meal:"BBQ baby back ribs — dry rub, no sugar sauce, coleslaw",emoji:"🍖",note:"Weekend treat"}, fruit:"Mixed berries" },
+    { day:"Sunday",   type:"prep-day",      breakfast:{meal:"Big bacon & veggie frittata — serves 2, eat one slice now, save one",emoji:"🍳",note:"Sit-down brunch"}, lunch:{meal:"Rib leftovers + side salad",emoji:"🥗",note:"Easy"}, dinner:{meal:"Slow braised beef short ribs, roasted garlic cauliflower mash",emoji:"🥩",note:"Worth every minute"}, fruit:"Blueberries with coconut yoghurt", prepNote:"🗓️ PREP: Batch bacon, boil eggs, cook Italian sausage, grill chicken, roast veg, assemble 5 jars" },
+  ]},
+  { label: "Week 3", days: [
+    { day:"Monday",   type:"weekday",       breakfast:{meal:"Bacon, Egg & Chive Savoury Jar",emoji:"🥓",note:"Prep Sunday"},         lunch:{meal:"Short rib lettuce cups, horseradish cream, fresh herbs",emoji:"🥬",note:"Reheat"}, dinner:{meal:"Shrimp stir-fry — garlic butter, cherry tomatoes, spinach, zucchini noodles",emoji:"🍤",note:"12 min"}, fruit:"Raspberries" },
+    { day:"Tuesday",  type:"weekday",       breakfast:{meal:"Berry Vanilla Cream Sweet Jar",emoji:"🫐",note:"Prep Sunday"},           lunch:{meal:"Thermos: chicken & vegetable soup — bone broth, zucchini, green beans, herbs",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Pork belly slices, roasted bok choy, ginger coconut aminos glaze",emoji:"🥩",note:"20 min"}, fruit:"Sliced nectarine" },
+    { day:"Wednesday",type:"weekday",       breakfast:{meal:"Southwest Chorizo Savoury Jar",emoji:"🌶️",note:"Prep Sunday"},          lunch:{meal:"Charcuterie box — capicola, manchego, olives, cherry tomatoes, radishes",emoji:"🫒",note:"Cold"}, dinner:{meal:"Taco bowls — ground beef, cauliflower rice, avocado, sour cream, fresh salsa",emoji:"🌮",note:"20 min"}, fruit:"Watermelon & mint" },
+    { day:"Thursday", type:"weekday",       breakfast:{meal:"Toasted Coconut & Cinnamon Sweet Jar",emoji:"🥥",note:"Prep Sunday"},   lunch:{meal:"Big protein salad — grilled chicken, avocado, bacon, mixed greens, lemon dressing",emoji:"🥗",note:"Cold"}, dinner:{meal:"Salmon patties — canned salmon, egg, herbs, fried in butter, side slaw",emoji:"🐟",note:"15 min"}, fruit:"Strawberries" },
+    { day:"Friday",   type:"weekday",       breakfast:{meal:"Italian Herb & Prosciutto Savoury Jar",emoji:"🧀",note:"Prep Sunday"},   lunch:{meal:"Thermos: tomato basil soup — coconut cream base, fresh basil, parmesan",emoji:"🍲",note:"Reheat"}, dinner:{meal:"NY Strip steak, compound herb butter, grilled asparagus",emoji:"🥩",note:"Friday done right 🔥"}, fruit:"Blackberries with almond butter" },
+    { day:"Saturday", type:"weekend-light", breakfast:{meal:"Avocado on cloud bread, poached egg, chilli",emoji:"🥑",note:"Light day"}, lunch:{meal:"Grilled shrimp salad — mango (small), avocado, cucumber, lime dressing",emoji:"🥗",note:"Summer vibes"}, dinner:{meal:"Whole roasted chicken — lemon, garlic, herbs. Eat half, use rest next week",emoji:"🍗",note:"Easy wins"}, fruit:"Mixed berries" },
+    { day:"Sunday",   type:"prep-day",      breakfast:{meal:"Eggs benedict — no English muffin, on prosciutto rounds, hollandaise",emoji:"🍳",note:"Proper Sunday"}, lunch:{meal:"Roast chicken leftovers + roasted veg",emoji:"🍗",note:"Easy"}, dinner:{meal:"Ground beef stuffed bell peppers, tomato sauce, melted cheese",emoji:"🫑",note:"Comfort food keto"}, fruit:"Peach slices", prepNote:"🗓️ PREP: Batch bacon, boil eggs, cook chorizo, shred leftover chicken, roast veg, assemble 5 jars" },
+  ]},
+  { label: "Week 4", days: [
+    { day:"Monday",   type:"weekday",       breakfast:{meal:"Bacon, Egg & Chive Savoury Jar",emoji:"🥓",note:"Prep Sunday"},         lunch:{meal:"Chicken salad — shredded roast chicken, mayo, celery, dijon, lettuce cups",emoji:"🥬",note:"Cold"}, dinner:{meal:"Beef and broccoli stir-fry — coconut aminos, ginger, garlic, cauliflower rice",emoji:"🥩",note:"20 min"}, fruit:"Blueberries" },
+    { day:"Tuesday",  type:"weekday",       breakfast:{meal:"Chocolate PB Sweet Jar",emoji:"🍫",note:"Prep Sunday"},                  lunch:{meal:"Thermos: beef & vegetable soup — bone broth, zucchini, mushrooms, herbs",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Pork chops, apple (small, sliced, sautéed), sage brown butter, green beans",emoji:"🍖",note:"15 min"}, fruit:"Raspberries & coconut cream" },
+    { day:"Wednesday",type:"weekday",       breakfast:{meal:"Southwest Chorizo Savoury Jar",emoji:"🌶️",note:"Prep Sunday"},          lunch:{meal:"Charcuterie box — serrano ham, gouda, cornichons, cherry tomatoes, cucumber",emoji:"🫒",note:"Cold"}, dinner:{meal:"Shakshuka — eggs poached in spiced tomato sauce, feta, fresh herbs",emoji:"🍳",note:"20 min"}, fruit:"Watermelon cubes" },
+    { day:"Thursday", type:"weekday",       breakfast:{meal:"Berry Vanilla Cream Sweet Jar",emoji:"🫐",note:"Prep Sunday"},           lunch:{meal:"Big protein salad — tuna, avocado, capers, mixed greens, lemon olive oil",emoji:"🥗",note:"Cold"}, dinner:{meal:"Duck breast, cherry reduction (small amount), roasted cauliflower",emoji:"🍖",note:"Feel fancy 🦆"}, fruit:"Strawberries" },
+    { day:"Friday",   type:"weekday",       breakfast:{meal:"Toasted Coconut & Cinnamon Sweet Jar",emoji:"🥥",note:"Prep Sunday"},   lunch:{meal:"Thermos: roasted red pepper & chorizo soup, coconut cream, smoked paprika",emoji:"🍲",note:"Reheat"}, dinner:{meal:"Whole lobster tail OR king prawns, garlic butter, grilled asparagus",emoji:"🦞",note:"End of month treat! 🎉"}, fruit:"Peach with mint" },
+    { day:"Saturday", type:"weekend-light", breakfast:{meal:"Coconut yoghurt bowl — berries, toasted coconut, hemp hearts, almond butter",emoji:"🥥",note:"Light day"}, lunch:{meal:"Cobb salad — chicken, bacon, avocado, hard boiled egg, blue cheese, tomato",emoji:"🥗",note:"Classic"}, dinner:{meal:"BBQ night — ribs, grilled chicken, grilled zucchini & peppers",emoji:"🍖",note:"Summer BBQ 🔥"}, fruit:"Mixed berries" },
+    { day:"Sunday",   type:"prep-day",      breakfast:{meal:"Full keto fry-up — bacon, eggs, avocado, mushrooms, tomato, black coffee",emoji:"🍳",note:"You earned it"}, lunch:{meal:"BBQ leftovers + fresh salad",emoji:"🥗",note:"Easy"}, dinner:{meal:"Slow cooker beef stew — chuck, bone broth, turnip, celery, herbs. Set & forget",emoji:"🍲",note:"Prep day classic"}, fruit:"Blueberries & strawberries", prepNote:"🗓️ PREP: Batch bacon, boil eggs, cook sausage, grill chicken thighs, roast veg, assemble 5 jars" },
+  ]},
+];
 
-    // ---- DATA ----
-    var MEAL_META = {
-      breakfast:{label:"Breakfast",color:"#f5b942"},
-      lunch:{label:"Lunch",color:"#2dd4bf"},
-      dinner:{label:"Dinner",color:"#fb7a3c"},
-      snack:{label:"Snack",color:"#a3e635"}
-    };
-    var MEALS=["breakfast","lunch","dinner"];
-    var DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-    var DAY_NOTE={Sat:"light day",Sun:"prep day"};
-    var FLAVORS=["spicy","smoky","garlicky","citrusy","herby","sweet","tangy"];
-    var CATEGORY_ORDER=["Protein","Produce","Dairy-Free & Fats","Pantry & Spice","Nuts & Safe Seeds"];
-    var CATEGORY_MAP={"chicken thighs":"Protein","chicken breast":"Protein","ground beef":"Protein","sirloin steak":"Protein","shrimp":"Protein","salmon fillet":"Protein","smoked salmon":"Protein","italian sausage":"Protein","andouille sausage":"Protein","breakfast sausage":"Protein","chorizo":"Protein","eggs":"Protein","collagen protein powder":"Protein","bell pepper":"Produce","onion":"Produce","green onion":"Produce","garlic":"Produce","ginger":"Produce","celery":"Produce","cucumber":"Produce","tomato":"Produce","zucchini":"Produce","broccoli":"Produce","asparagus":"Produce","green beans":"Produce","spinach":"Produce","cauliflower rice":"Produce","butter lettuce":"Produce","avocado":"Produce","lime":"Produce","lemon":"Produce","cilantro":"Produce","parsley":"Produce","basil":"Produce","ghee":"Dairy-Free & Fats","olive oil":"Dairy-Free & Fats","coconut milk":"Dairy-Free & Fats","coconut cream":"Dairy-Free & Fats","almond milk":"Dairy-Free & Fats","coconut oil":"Dairy-Free & Fats","coconut butter":"Dairy-Free & Fats","dairy-free cream cheese":"Dairy-Free & Fats","avocado oil mayo":"Dairy-Free & Fats","buffalo sauce":"Pantry & Spice","coconut aminos":"Pantry & Spice","fish sauce":"Pantry & Spice","red curry paste":"Pantry & Spice","marinara sauce":"Pantry & Spice","capers":"Pantry & Spice","kalamata olives":"Pantry & Spice","hot sauce":"Pantry & Spice","apple cider vinegar":"Pantry & Spice","keto sweetener":"Pantry & Spice","vanilla extract":"Pantry & Spice","almond butter":"Pantry & Spice","cajun seasoning":"Pantry & Spice","taco seasoning":"Pantry & Spice","fajita seasoning":"Pantry & Spice","jerk seasoning":"Pantry & Spice","italian seasoning":"Pantry & Spice","greek seasoning":"Pantry & Spice","garlic-onion blend":"Pantry & Spice","gochugaru":"Pantry & Spice","cinnamon":"Pantry & Spice","almonds":"Nuts & Safe Seeds","pecans":"Nuts & Safe Seeds","hemp hearts":"Nuts & Safe Seeds","chia seeds":"Nuts & Safe Seeds","coconut flakes":"Nuts & Safe Seeds"};
-    function ig(name,label){return{name:name,label:label};}
-    var RECIPES=[
-      {id:"b1",meal:"breakfast",name:"Smoky Chorizo & Pepper Egg Jar",time:10,flavor:["smoky","spicy"],grabGo:true,thermos:true,sundayPrep:false,macros:{cal:420,fat:34,protein:24,netCarb:4},ingredients:[ig("chorizo","4 oz chorizo, casing removed"),ig("eggs","3 eggs"),ig("bell pepper","1/2 bell pepper, diced"),ig("green onion","1 stalk, sliced"),ig("avocado","1/2 avocado"),ig("hot sauce","splash hot sauce")],steps:["Brown chorizo in a skillet, breaking it up, 4 min.","Add bell pepper, soften 2 min.","Whisk eggs, pour in, scramble until just set.","Pack into a jar with avocado, finish with hot sauce."]},
-      {id:"b2",meal:"breakfast",name:"Maple-Pecan Chia Pudding Jar",time:5,flavor:["sweet"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:310,fat:24,protein:8,netCarb:6},ingredients:[ig("chia seeds","1/4 cup chia seeds"),ig("almond milk","3/4 cup almond milk"),ig("coconut cream","2 tbsp coconut cream"),ig("pecans","2 tbsp pecans, chopped"),ig("cinnamon","1/2 tsp cinnamon"),ig("keto sweetener","1 tbsp keto sweetener"),ig("vanilla extract","1/2 tsp vanilla")],steps:["Whisk almond milk, coconut cream, sweetener, vanilla, and cinnamon.","Stir in chia seeds, transfer to a jar.","Refrigerate overnight.","Top with pecans before eating."]},
-      {id:"b3",meal:"breakfast",name:"Garlic-Onion Bagel Egg Muffins",time:20,flavor:["smoky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:280,fat:20,protein:19,netCarb:3},ingredients:[ig("eggs","6 eggs"),ig("smoked salmon","3 oz smoked salmon"),ig("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ig("green onion","1 stalk, sliced"),ig("garlic-onion blend","1 tsp garlic-onion seasoning (sesame/poppy-free)")],steps:["Whisk eggs with the garlic-onion blend.","Pour into a greased muffin tin, bake 350F for 15 min.","Dollop with cream cheese, flake in salmon.","Top with green onion."]},
-      {id:"b4",meal:"breakfast",name:"Western NY Diner Skillet",time:12,flavor:["spicy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:460,fat:36,protein:26,netCarb:5},ingredients:[ig("breakfast sausage","4 oz breakfast sausage"),ig("eggs","3 eggs"),ig("bell pepper","1/2 bell pepper, diced"),ig("onion","1/4 onion, diced"),ig("hot sauce","splash hot sauce"),ig("avocado","1/2 avocado")],steps:["Brown sausage 5 min.","Add peppers and onion, soften.","Push aside, scramble eggs in the same pan.","Combine, finish with hot sauce and avocado."]},
-      {id:"b5",meal:"breakfast",name:"Iced Mocha Protein Shake",time:5,flavor:["sweet"],grabGo:true,thermos:false,sundayPrep:false,macros:{cal:260,fat:16,protein:20,netCarb:5},ingredients:[ig("almond milk","1 cup almond milk"),ig("coconut cream","1 tbsp coconut cream"),ig("collagen protein powder","1 scoop collagen protein"),ig("cinnamon","pinch cinnamon"),ig("vanilla extract","1/2 tsp vanilla")],steps:["Blend everything with ice until smooth.","Pour over fresh ice and go."]},
-      {id:"b6",meal:"breakfast",name:"Smoked Salmon & Avocado Jar",time:8,flavor:["citrusy"],grabGo:true,thermos:true,sundayPrep:false,macros:{cal:380,fat:28,protein:24,netCarb:6},ingredients:[ig("smoked salmon","3 oz smoked salmon"),ig("avocado","1/2 avocado"),ig("cucumber","1/2 cucumber, sliced"),ig("capers","1 tsp capers"),ig("eggs","1 hard-boiled egg"),ig("lemon","wedge of lemon"),ig("olive oil","1 tsp olive oil")],steps:["Layer cucumber, smoked salmon, and sliced egg in a jar.","Top with avocado and capers.","Dress with olive oil and lemon right before eating."]},
-      {id:"b7",meal:"breakfast",name:"Sausage, Spinach & Garlic Egg Bake Bars",time:35,flavor:["garlicky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:240,fat:18,protein:16,netCarb:2},ingredients:[ig("breakfast sausage","8 oz breakfast sausage"),ig("eggs","8 eggs"),ig("spinach","2 cups spinach"),ig("garlic","2 cloves garlic, minced"),ig("ghee","1 tbsp ghee")],steps:["Brown sausage with garlic, wilt in spinach.","Whisk eggs, fold in the sausage mix.","Pour into a greased baking dish, bake 350F for 25 min.","Cool, then slice into bars for the week."]},
-      {id:"l1",meal:"lunch",name:"Buffalo Chicken Cauli Rice Bowl",time:15,flavor:["spicy","tangy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:520,fat:38,protein:34,netCarb:6},ingredients:[ig("chicken thighs","6 oz chicken thighs, diced"),ig("buffalo sauce","3 tbsp buffalo sauce"),ig("cauliflower rice","1.5 cups cauliflower rice"),ig("celery","1 stalk, diced"),ig("avocado oil mayo","1 tbsp avocado oil mayo"),ig("green onion","1 stalk, sliced")],steps:["Sear diced chicken thighs until cooked through, 8 min.","Toss with buffalo sauce.","Saute cauliflower rice 4 min, plate.","Top with chicken, celery, a drizzle of mayo, and green onion."]},
-      {id:"l2",meal:"lunch",name:"Korean Beef & Broccoli Bowl",time:15,flavor:["spicy","garlicky"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:540,fat:36,protein:33,netCarb:8},ingredients:[ig("ground beef","6 oz ground beef"),ig("coconut aminos","2 tbsp coconut aminos"),ig("garlic","2 cloves garlic, minced"),ig("ginger","1 tsp ginger, grated"),ig("broccoli","1.5 cups broccoli"),ig("gochugaru","1 tsp gochugaru"),ig("green onion","1 stalk, sliced")],steps:["Brown beef with garlic and ginger, 6 min.","Stir in coconut aminos and gochugaru.","Steam or saute broccoli, combine.","Top with green onion."]},
-      {id:"l3",meal:"lunch",name:"Greek Lemon Chicken Jar",time:15,flavor:["citrusy","herby"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:470,fat:32,protein:31,netCarb:7},ingredients:[ig("chicken thighs","6 oz chicken thighs"),ig("greek seasoning","1 tbsp Greek seasoning"),ig("lemon","1/2 lemon"),ig("cucumber","1/2 cucumber, diced"),ig("tomato","1/2 cup tomato, diced"),ig("kalamata olives","8 kalamata olives"),ig("olive oil","1 tbsp olive oil")],steps:["Season chicken thighs with Greek seasoning, sear 10 min.","Layer cucumber, tomato, and olives in a jar.","Add sliced chicken on top.","Finish with olive oil and lemon."]},
-      {id:"l4",meal:"lunch",name:"Cajun Shrimp Zoodle Bowl",time:12,flavor:["spicy","citrusy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:410,fat:28,protein:30,netCarb:6},ingredients:[ig("shrimp","6 oz shrimp"),ig("cajun seasoning","1 tbsp cajun seasoning"),ig("zucchini","1 zucchini, spiralized"),ig("garlic","1 clove garlic, minced"),ig("ghee","1 tbsp ghee"),ig("lemon","wedge of lemon"),ig("parsley","1 tbsp parsley, chopped")],steps:["Toss shrimp in cajun seasoning.","Sear in ghee with garlic, 2 min per side.","Toss in zoodles just to warm through.","Finish with lemon and parsley."]},
-      {id:"l5",meal:"lunch",name:"Taco Bowl with Cilantro-Lime Cauli Rice",time:15,flavor:["spicy","citrusy"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:500,fat:34,protein:32,netCarb:7},ingredients:[ig("ground beef","6 oz ground beef"),ig("taco seasoning","1.5 tbsp taco seasoning"),ig("cauliflower rice","1.5 cups cauliflower rice"),ig("avocado","1/2 avocado"),ig("lime","1/2 lime"),ig("cilantro","2 tbsp cilantro, chopped")],steps:["Brown beef with taco seasoning, 6 min.","Saute cauliflower rice with lime and cilantro.","Plate rice, top with beef and avocado."]},
-      {id:"l6",meal:"lunch",name:"Italian Sausage & Pepper Skillet Jar",time:15,flavor:["herby","garlicky"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:480,fat:36,protein:24,netCarb:7},ingredients:[ig("italian sausage","6 oz italian sausage"),ig("bell pepper","1 bell pepper, sliced"),ig("onion","1/2 onion, sliced"),ig("garlic","2 cloves garlic, minced"),ig("marinara sauce","1/3 cup marinara sauce"),ig("italian seasoning","1 tsp Italian seasoning")],steps:["Slice and brown sausage, 6 min.","Add peppers, onion, and garlic, soften.","Stir in marinara and Italian seasoning, simmer 5 min, jar it."]},
-      {id:"l7",meal:"lunch",name:"Thai Coconut Curry Chicken Jar",time:18,flavor:["spicy","herby"],grabGo:false,thermos:true,sundayPrep:false,macros:{cal:510,fat:38,protein:28,netCarb:8},ingredients:[ig("chicken thighs","6 oz chicken thighs, diced"),ig("red curry paste","1.5 tbsp red curry paste"),ig("coconut milk","1/2 cup coconut milk"),ig("bell pepper","1/2 bell pepper, sliced"),ig("fish sauce","1 tsp fish sauce"),ig("basil","small handful basil"),ig("lime","wedge of lime")],steps:["Sear diced chicken, 5 min.","Stir in curry paste, bloom 1 min.","Add coconut milk, peppers, and fish sauce, simmer 8 min.","Finish with basil and lime."]},
-      {id:"d1",meal:"dinner",name:"Garlic Butter Steak Bites & Asparagus",time:15,flavor:["garlicky","herby"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:560,fat:42,protein:36,netCarb:4},ingredients:[ig("sirloin steak","8 oz sirloin, cubed"),ig("ghee","2 tbsp ghee"),ig("garlic","3 cloves garlic, minced"),ig("asparagus","1 bunch asparagus"),ig("parsley","1 tbsp parsley, chopped")],steps:["Cube steak, pat dry, season well.","Sear in ghee 2-3 min per side, add garlic the last minute.","Saute asparagus in the same pan.","Rest steak, finish with parsley."]},
-      {id:"d2",meal:"dinner",name:"Sheet-Pan Cajun Sausage & Veggies",time:20,flavor:["spicy","smoky"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:520,fat:40,protein:26,netCarb:7},ingredients:[ig("andouille sausage","8 oz andouille sausage, sliced"),ig("broccoli","1.5 cups broccoli"),ig("bell pepper","1 bell pepper, sliced"),ig("cajun seasoning","1 tbsp cajun seasoning"),ig("olive oil","2 tbsp olive oil")],steps:["Toss sliced sausage and veggies with oil and cajun seasoning.","Roast at 425F for 18 min, stirring once."]},
-      {id:"d3",meal:"dinner",name:"Pan-Seared Salmon, Lemon-Caper, Green Beans",time:15,flavor:["citrusy","herby"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:480,fat:34,protein:34,netCarb:5},ingredients:[ig("salmon fillet","7 oz salmon fillet"),ig("ghee","1.5 tbsp ghee"),ig("lemon","1/2 lemon"),ig("capers","1 tbsp capers"),ig("garlic","1 clove garlic, minced"),ig("green beans","1.5 cups green beans")],steps:["Sear salmon skin-down in ghee, 4 min per side.","Saute green beans with garlic in a second pan.","Deglaze the salmon pan with lemon and capers, spoon over."]},
-      {id:"d4",meal:"dinner",name:"15-Minute Chicken Fajita Skillet",time:15,flavor:["spicy","citrusy"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:440,fat:26,protein:38,netCarb:7},ingredients:[ig("chicken breast","7 oz chicken breast, sliced thin"),ig("fajita seasoning","1.5 tbsp fajita seasoning"),ig("bell pepper","1 bell pepper, sliced"),ig("onion","1/2 onion, sliced"),ig("avocado","1/2 avocado"),ig("lime","wedge of lime")],steps:["Slice chicken thin, toss with fajita seasoning.","Sear 4 min, add peppers and onion, cook 6 min more.","Finish with lime, top with avocado."]},
-      {id:"d5",meal:"dinner",name:"Spicy Korean Beef Lettuce Wraps",time:15,flavor:["spicy","garlicky"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:460,fat:32,protein:30,netCarb:5},ingredients:[ig("ground beef","6 oz ground beef"),ig("coconut aminos","2 tbsp coconut aminos"),ig("gochugaru","1 tsp gochugaru"),ig("garlic","2 cloves garlic, minced"),ig("ginger","1 tsp ginger, grated"),ig("butter lettuce","1 head butter lettuce"),ig("green onion","1 stalk, sliced")],steps:["Brown beef with garlic and ginger.","Stir in coconut aminos and gochugaru.","Spoon into lettuce cups, top with green onion."]},
-      {id:"d6",meal:"dinner",name:"Shrimp Scampi Zoodles",time:15,flavor:["garlicky","citrusy"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:420,fat:30,protein:28,netCarb:5},ingredients:[ig("shrimp","6 oz shrimp"),ig("ghee","2 tbsp ghee"),ig("garlic","3 cloves garlic, minced"),ig("lemon","1/2 lemon"),ig("parsley","1 tbsp parsley, chopped"),ig("zucchini","1 zucchini, spiralized"),ig("apple cider vinegar","1 tsp apple cider vinegar")],steps:["Sear shrimp in ghee, 2 min per side, remove.","Add garlic, lemon, and a splash of vinegar to the pan.","Toss in zoodles and shrimp to warm through, finish with parsley."]},
-      {id:"d7",meal:"dinner",name:"Jerk Chicken Thighs & Coconut Cauli Rice",time:20,flavor:["spicy","citrusy"],grabGo:false,thermos:false,sundayPrep:false,macros:{cal:510,fat:34,protein:36,netCarb:6},ingredients:[ig("chicken thighs","8 oz chicken thighs"),ig("jerk seasoning","1.5 tbsp jerk seasoning"),ig("cauliflower rice","1.5 cups cauliflower rice"),ig("coconut milk","1/3 cup coconut milk"),ig("lime","wedge of lime")],steps:["Rub chicken with jerk seasoning (marinate ahead if you can).","Sear 6-7 min per side until cooked through.","Simmer cauliflower rice in coconut milk 5 min.","Plate together, squeeze lime."]},
-      {id:"s1",meal:"snack",name:"Hemp Heart Energy Bites",time:10,flavor:["sweet"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:190,fat:16,protein:5,netCarb:3},ingredients:[ig("almond butter","1/2 cup almond butter"),ig("hemp hearts","1/4 cup hemp hearts"),ig("coconut flakes","2 tbsp coconut flakes"),ig("cinnamon","1/2 tsp cinnamon"),ig("keto sweetener","1 tbsp keto sweetener"),ig("vanilla extract","1/2 tsp vanilla")],steps:["Mix everything into a thick dough.","Roll into bites.","Chill 30 min, store in the fridge."]},
-      {id:"s2",meal:"snack",name:"Spicy Roasted Almonds & Pecans",time:15,flavor:["spicy","smoky"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:220,fat:20,protein:6,netCarb:3},ingredients:[ig("almonds","1/2 cup almonds"),ig("pecans","1/2 cup pecans"),ig("ghee","1 tbsp ghee, melted"),ig("cajun seasoning","1 tsp cajun seasoning")],steps:["Toss nuts with melted ghee and cajun seasoning.","Roast at 325F for 12 min, stirring once.","Cool fully before storing."]},
-      {id:"s3",meal:"snack",name:"Buffalo Chicken Dip Jar with Celery",time:10,flavor:["spicy","tangy"],grabGo:true,thermos:false,sundayPrep:false,macros:{cal:280,fat:22,protein:16,netCarb:3},ingredients:[ig("chicken thighs","4 oz cooked chicken, shredded"),ig("buffalo sauce","2 tbsp buffalo sauce"),ig("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ig("celery","2 stalks celery")],steps:["Shred cooked chicken, warm with buffalo sauce and cream cheese until melty.","Jar it with celery sticks for dipping."]},
-      {id:"s4",meal:"snack",name:"Coconut-Lime Fat Bombs",time:10,flavor:["sweet","citrusy"],grabGo:true,thermos:false,sundayPrep:true,macros:{cal:200,fat:20,protein:2,netCarb:2},ingredients:[ig("coconut butter","1/3 cup coconut butter"),ig("coconut oil","2 tbsp coconut oil"),ig("lime","zest of 1 lime"),ig("coconut flakes","2 tbsp coconut flakes"),ig("keto sweetener","1 tbsp keto sweetener")],steps:["Melt coconut butter and oil together.","Stir in lime zest and sweetener.","Pour into molds, top with coconut flakes, freeze 1 hr."]}
-    ];
-    var ALL_INGREDIENT_NAMES=(function(){var s={};RECIPES.forEach(function(r){r.ingredients.forEach(function(i){s[i.name]=1;});});return Object.keys(s).sort();})();
-    function emptyPlan(){var o={};DAYS.forEach(function(d){o[d]={breakfast:null,lunch:null,dinner:null};});return o;}
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── DATA: SHOPPING LIST ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const shopWeeks = [
+  { label:"Week 1", sections:[
+    { section:"🥩 Meat & Protein", color:"rose", items:[{name:"Bacon (thick cut)",amount:"2 packs",staple:true},{name:"Chorizo (bulk or links)",amount:"1 pack",staple:false},{name:"Ground beef (80/20)",amount:"2 lbs",staple:true},{name:"Chicken thighs (bone-in, skin-on)",amount:"2 lbs",staple:true},{name:"Ribeye steak",amount:"1 steak",staple:false},{name:"Pork shoulder (for pulled pork)",amount:"3–4 lbs",staple:false},{name:"Prosciutto",amount:"1 pack",staple:false},{name:"Turkey (sliced deli)",amount:"1 pack",staple:false},{name:"Ground beef patty mince (smash burger)",amount:"1 lb",staple:false}]},
+    { section:"🐟 Seafood", color:"sky", items:[{name:"Salmon fillets",amount:"2 fillets",staple:false}]},
+    { section:"🥚 Eggs & Dairy Alternatives", color:"amber", items:[{name:"Eggs (large)",amount:"2 dozen",staple:true},{name:"Coconut cream (full fat, unsweetened)",amount:"3 cans",staple:true},{name:"Coconut milk (full fat, unsweetened)",amount:"2 cartons",staple:true},{name:"Almond milk (unsweetened)",amount:"1 carton",staple:true},{name:"Cream cheese (lactose-free)",amount:"1 block",staple:true},{name:"Butter (unsalted)",amount:"1 lb",staple:true},{name:"Feta (check tolerance)",amount:"1 pack",staple:false}]},
+    { section:"🥑 Fresh Produce", color:"emerald", items:[{name:"Avocados",amount:"5",staple:true},{name:"Zucchini",amount:"3",staple:true},{name:"Bell peppers (mixed)",amount:"2",staple:true},{name:"Cherry tomatoes",amount:"1 pint",staple:true},{name:"Spinach (baby)",amount:"1 bag",staple:true},{name:"Cucumber",amount:"2",staple:true},{name:"Asparagus",amount:"1 bunch",staple:false},{name:"Red onion",amount:"1",staple:true},{name:"Garlic (whole bulb)",amount:"2 bulbs",staple:true}]},
+    { section:"🍓 Fresh Fruit", color:"pink", items:[{name:"Strawberries",amount:"1 quart",staple:true},{name:"Raspberries",amount:"1 pint",staple:true},{name:"Blueberries",amount:"1 pint",staple:true},{name:"Watermelon (small)",amount:"1",staple:false},{name:"Peach",amount:"1",staple:false},{name:"Lemons",amount:"3",staple:true}]},
+    { section:"🌿 Fresh Herbs", color:"teal", items:[{name:"Fresh chives",amount:"1 bunch",staple:true},{name:"Fresh cilantro",amount:"1 bunch",staple:true},{name:"Fresh basil",amount:"1 bunch",staple:true}]},
+    { section:"🫙 Jar Bases (bulk — lasts all 4 weeks)", color:"violet", items:[{name:"Hemp hearts (shelled)",amount:"3–4 lb bag",staple:true},{name:"Chia seeds",amount:"2 lb bag",staple:true},{name:"Unsweetened coconut flakes",amount:"2 bags",staple:true},{name:"Vanilla extract",amount:"1 bottle",staple:true}]},
+    { section:"🍖 Broths", color:"amber", items:[{name:"Chicken bone broth",amount:"3 cartons",staple:true}]},
+    { section:"💧 Hydration", color:"cyan", items:[{name:"LMNT electrolyte sachets",amount:"1 box",staple:true},{name:"Cream of tartar",amount:"1 small tin",staple:true},{name:"Sparkling water",amount:"1 case",staple:true}]},
+    { section:"🧰 One-Time Kitchen Buys", color:"slate", items:[{name:"Wide mouth pint mason jars (16oz)",amount:"5–7 jars",staple:false},{name:"Insulated lunch bag",amount:"1",staple:false},{name:"Wide-mouth thermos",amount:"1",staple:false},{name:"16oz insulated water bottle",amount:"1",staple:false}]},
+  ]},
+  { label:"Week 2", sections:[
+    { section:"🥩 Meat & Protein", color:"rose", items:[{name:"Bacon (thick cut)",amount:"2 packs",staple:true},{name:"Italian sausage",amount:"1 pack",staple:false},{name:"Chorizo",amount:"1 pack",staple:false},{name:"Chicken thighs (bone-in)",amount:"1.5 lbs",staple:true},{name:"Lamb chops",amount:"4–6 chops",staple:false},{name:"Turkey (ground, for burgers)",amount:"1 lb",staple:false},{name:"Prosciutto",amount:"1 pack",staple:false},{name:"Baby back ribs",amount:"1 rack",staple:false}]},
+    { section:"🐟 Seafood", color:"sky", items:[{name:"Scallops",amount:"1 lb",staple:false}]},
+    { section:"🥚 Eggs & Dairy Alternatives", color:"amber", items:[{name:"Eggs (large)",amount:"2 dozen",staple:true},{name:"Coconut cream (unsweetened)",amount:"2–3 cans",staple:true},{name:"Coconut milk (unsweetened)",amount:"2 cartons",staple:true},{name:"Cream cheese (lactose-free)",amount:"1 block",staple:true},{name:"Aged cheddar",amount:"1 block",staple:false},{name:"Butter (unsalted)",amount:"1 lb",staple:true}]},
+    { section:"🥑 Fresh Produce", color:"emerald", items:[{name:"Avocados",amount:"5",staple:true},{name:"Zucchini",amount:"3",staple:true},{name:"Green beans",amount:"1 lb",staple:false},{name:"Bok choy",amount:"2 heads",staple:false},{name:"Cauliflower",amount:"1 head",staple:true},{name:"Spinach (baby)",amount:"1 bag",staple:true},{name:"Cabbage (for coleslaw)",amount:"1 head",staple:false},{name:"Cherry tomatoes",amount:"1 pint",staple:true},{name:"Cucumber",amount:"2",staple:true},{name:"Garlic",amount:"2 bulbs",staple:true},{name:"Fresh ginger root",amount:"1 knob",staple:true},{name:"Green onions",amount:"1 bunch",staple:true}]},
+    { section:"🍓 Fresh Fruit", color:"pink", items:[{name:"Blackberries",amount:"1 pint",staple:true},{name:"Raspberries",amount:"1 pint",staple:true},{name:"Strawberries",amount:"1 quart",staple:true},{name:"Watermelon (small)",amount:"1",staple:false},{name:"Peach",amount:"1",staple:false},{name:"Lemons",amount:"3",staple:true},{name:"Limes",amount:"2",staple:true}]},
+    { section:"🌿 Fresh Herbs", color:"teal", items:[{name:"Fresh mint",amount:"1 bunch",staple:false},{name:"Fresh basil",amount:"1 bunch",staple:true},{name:"Fresh dill",amount:"1 bunch",staple:false}]},
+    { section:"🍖 Broths", color:"amber", items:[{name:"Chicken bone broth",amount:"2 cartons",staple:true},{name:"Beef bone broth",amount:"1 carton",staple:true}]},
+    { section:"💧 Hydration", color:"cyan", items:[{name:"Sparkling water",amount:"1 case",staple:true}]},
+  ]},
+  { label:"Week 3", sections:[
+    { section:"🥩 Meat & Protein", color:"rose", items:[{name:"Bacon (thick cut)",amount:"1 pack",staple:true},{name:"Chorizo",amount:"1 pack",staple:false},{name:"Pork belly slices",amount:"1 lb",staple:false},{name:"Ground beef (80/20)",amount:"2 lbs",staple:true},{name:"NY Strip steak",amount:"1 steak",staple:false},{name:"Beef short ribs",amount:"2–3 lbs",staple:false},{name:"Whole chicken (for roasting)",amount:"1 bird",staple:false},{name:"Prosciutto",amount:"1 pack",staple:false},{name:"Salami / capicola",amount:"1 pack",staple:false}]},
+    { section:"🐟 Seafood", color:"sky", items:[{name:"Shrimp / king prawns (peeled)",amount:"1 lb",staple:false},{name:"Canned salmon (wild caught)",amount:"2 cans",staple:true}]},
+    { section:"🥚 Eggs & Dairy Alternatives", color:"amber", items:[{name:"Eggs (large)",amount:"2 dozen",staple:true},{name:"Coconut cream (unsweetened)",amount:"2–3 cans",staple:true},{name:"Coconut milk (unsweetened)",amount:"2 cartons",staple:true},{name:"Manchego cheese",amount:"1 block",staple:false},{name:"Butter (unsalted)",amount:"1 lb",staple:true}]},
+    { section:"🥑 Fresh Produce", color:"emerald", items:[{name:"Avocados",amount:"5",staple:true},{name:"Cauliflower",amount:"2 heads",staple:true},{name:"Zucchini",amount:"3",staple:true},{name:"Bok choy",amount:"1–2 heads",staple:false},{name:"Cherry tomatoes",amount:"1 pint",staple:true},{name:"Radishes",amount:"1 bunch",staple:false},{name:"Mixed salad greens",amount:"1 bag",staple:true},{name:"Asparagus",amount:"1 bunch",staple:false},{name:"Spinach (baby)",amount:"1 bag",staple:true},{name:"Garlic",amount:"2 bulbs",staple:true},{name:"Fresh ginger root",amount:"1 knob",staple:true}]},
+    { section:"🍓 Fresh Fruit", color:"pink", items:[{name:"Raspberries",amount:"1 pint",staple:true},{name:"Strawberries",amount:"1 quart",staple:true},{name:"Blackberries",amount:"1 pint",staple:true},{name:"Nectarines",amount:"2",staple:false},{name:"Watermelon (small)",amount:"1",staple:false},{name:"Peach",amount:"1",staple:false},{name:"Mango (small, shrimp salad)",amount:"1",staple:false},{name:"Lemons",amount:"3",staple:true},{name:"Limes",amount:"2",staple:true}]},
+    { section:"🌿 Fresh Herbs", color:"teal", items:[{name:"Fresh basil",amount:"1 bunch",staple:true},{name:"Fresh cilantro",amount:"1 bunch",staple:true},{name:"Fresh parsley",amount:"1 bunch",staple:true}]},
+    { section:"🍖 Broths", color:"amber", items:[{name:"Chicken bone broth",amount:"2 cartons",staple:true},{name:"Beef bone broth",amount:"1 carton",staple:true}]},
+    { section:"💧 Hydration", color:"cyan", items:[{name:"LMNT electrolyte sachets (restock)",amount:"1 box",staple:true},{name:"Sparkling water",amount:"1 case",staple:true}]},
+  ]},
+  { label:"Week 4", sections:[
+    { section:"🥩 Meat & Protein", color:"rose", items:[{name:"Bacon (thick cut)",amount:"1 pack",staple:true},{name:"Chorizo",amount:"1 pack",staple:false},{name:"Italian sausage",amount:"1 pack",staple:false},{name:"Ground beef (80/20)",amount:"2 lbs",staple:true},{name:"Pork chops",amount:"4 chops",staple:false},{name:"Duck breast",amount:"2 breasts",staple:false},{name:"Baby back ribs",amount:"1 rack",staple:false},{name:"Chicken pieces (BBQ)",amount:"2 lbs",staple:false},{name:"Serrano ham",amount:"1 pack",staple:false},{name:"Chuck roast (for stew)",amount:"2 lbs",staple:false}]},
+    { section:"🐟 Seafood", color:"sky", items:[{name:"Canned tuna (in olive oil)",amount:"2–3 cans",staple:true},{name:"Lobster tails or king prawns",amount:"2",staple:false}]},
+    { section:"🥚 Eggs & Dairy Alternatives", color:"amber", items:[{name:"Eggs (large)",amount:"2 dozen",staple:true},{name:"Coconut cream (unsweetened)",amount:"2–3 cans",staple:true},{name:"Coconut milk (unsweetened)",amount:"2 cartons",staple:true},{name:"Coconut yoghurt (unsweetened)",amount:"1 tub",staple:false},{name:"Gouda cheese",amount:"1 block",staple:false},{name:"Blue cheese",amount:"1 small block",staple:false},{name:"Butter (unsalted)",amount:"1 lb",staple:true}]},
+    { section:"🥑 Fresh Produce", color:"emerald", items:[{name:"Avocados",amount:"5",staple:true},{name:"Broccoli",amount:"2 heads",staple:false},{name:"Cauliflower",amount:"1 head",staple:true},{name:"Bell peppers (mixed)",amount:"3",staple:true},{name:"Cherry tomatoes",amount:"1 pint",staple:true},{name:"Mushrooms",amount:"1 lb",staple:false},{name:"Zucchini",amount:"3",staple:true},{name:"Asparagus",amount:"1 bunch",staple:false},{name:"Green beans",amount:"1 lb",staple:false},{name:"Turnip (for stew)",amount:"2",staple:false},{name:"Celery",amount:"1 bunch",staple:true},{name:"Garlic",amount:"2 bulbs",staple:true}]},
+    { section:"🍓 Fresh Fruit", color:"pink", items:[{name:"Blueberries",amount:"1 pint",staple:true},{name:"Raspberries",amount:"1 pint",staple:true},{name:"Strawberries",amount:"1 quart",staple:true},{name:"Watermelon (small)",amount:"1",staple:false},{name:"Peach",amount:"1",staple:false},{name:"Lemons",amount:"3",staple:true}]},
+    { section:"🌿 Fresh Herbs", color:"teal", items:[{name:"Fresh sage",amount:"1 bunch",staple:false},{name:"Fresh rosemary",amount:"1 bunch",staple:false},{name:"Fresh thyme",amount:"1 bunch",staple:false}]},
+    { section:"🍖 Broths", color:"amber", items:[{name:"Chicken bone broth",amount:"2 cartons",staple:true},{name:"Beef bone broth",amount:"2 cartons",staple:true}]},
+    { section:"💧 Hydration", color:"cyan", items:[{name:"Sparkling water",amount:"1 case",staple:true}]},
+  ]},
+];
 
-    // ---- small components ----
-    function MealTag(props){var m=MEAL_META[props.meal];return h("span",{className:"oswald",style:{fontSize:"10px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.1em",padding:"2px 8px",borderRadius:"3px",color:m.color,backgroundColor:m.color+"1f"}},m.label);}
-    function MacroReadout(props){var m=props.macros;var items=[["cal",m.cal,""],["fat",m.fat,"g"],["pro",m.protein,"g"],["net c",m.netCarb,"g"]];return h("div",{className:"flex mono",style:{gap:"12px",fontSize:props.compact?"10px":"12px",color:"var(--muted)"}},items.map(function(it){return h("span",{key:it[0]},h("span",{style:{color:"#e2e8f0"}},it[1]+it[2])," "+it[0]);}));}
-    function FlameGauge(props){var pct=props.pct;var color=pct>=80?"#fb7a3c":pct>=50?"#f5b942":"#64748b";return h("div",{className:"flex items-center",style:{gap:"8px"}},h("div",{style:{height:"6px",width:"100%",borderRadius:"9999px",overflow:"hidden",backgroundColor:"var(--line)"}},h("div",{style:{height:"100%",borderRadius:"9999px",width:pct+"%",background:"linear-gradient(90deg,#f5b942,"+color+")"}})),h("span",{className:"mono shrink-0",style:{fontSize:"12px",color:color}},pct+"%"));}
+const pantryOnce = {
+  note:"Buy once at week 1 — lasts the full month",
+  sections:[
+    { section:"Oils, Fats & Condiments", color:"yellow", items:[{name:"Extra virgin olive oil",amount:"1 large bottle"},{name:"Coconut oil",amount:"1 large jar"},{name:"Avocado oil",amount:"1 bottle"},{name:"Coconut aminos",amount:"2 bottles"},{name:"Dijon mustard",amount:"1 jar"},{name:"Mayonnaise (avocado oil based)",amount:"1 large jar"},{name:"Hot sauce",amount:"1–2 bottles"},{name:"Olives (mixed, pitted)",amount:"2 jars"},{name:"Natural peanut butter (no sugar)",amount:"1 large jar"},{name:"Almond butter",amount:"1 jar"},{name:"Tomato passata / crushed tomatoes",amount:"4 cans"},{name:"Capers",amount:"1 jar"}]},
+    { section:"Spices & Dried Goods", color:"orange", items:[{name:"Sea salt (coarse)",amount:"1 large box"},{name:"Black pepper (whole peppercorns)",amount:"1 jar"},{name:"Smoked paprika",amount:"1 jar"},{name:"Cumin (ground)",amount:"1 jar"},{name:"Italian seasoning",amount:"1 jar"},{name:"Garlic powder",amount:"1 jar"},{name:"Onion powder",amount:"1 jar"},{name:"Chilli flakes",amount:"1 jar"},{name:"Cinnamon (ground)",amount:"1 jar"},{name:"Nutmeg (ground)",amount:"1 jar"},{name:"Cocoa powder (unsweetened)",amount:"1 tin"},{name:"Liquid stevia drops",amount:"1 bottle"},{name:"Garlic flakes (sesame-free blend)",amount:"1 jar"},{name:"Onion flakes (sesame-free blend)",amount:"1 jar"}]},
+    { section:"Kitchen Supplies", color:"slate", items:[{name:"Wide mouth pint mason jars (16oz)",amount:"12–16 jars"},{name:"Insulated lunch bag",amount:"1"},{name:"Wide-mouth thermos",amount:"1–2"},{name:"Meal prep containers (glass)",amount:"8–10"},{name:"Ziplock bags",amount:"2 boxes"},{name:"Parchment paper",amount:"1 roll"},{name:"Foil",amount:"1 roll"}]},
+  ],
+};
 
-    function RecipeCard(props){
-      var r=props.recipe,m=MEAL_META[r.meal];
-      return h("button",{onClick:function(){props.onOpen(r.id);},className:"w-full",style:{textAlign:"left",borderRadius:"8px",overflow:"hidden",backgroundColor:"var(--card)",borderLeft:"3px solid "+m.color}},
-        h("div",{style:{padding:"16px"}},
-          h("div",{className:"flex items-center justify-between",style:{marginBottom:"8px"}},h(MealTag,{meal:r.meal}),h("span",{className:"mono",style:{fontSize:"10px",color:"var(--dim)"}},"No "+r.id.toUpperCase())),
-          h("h3",{className:"oswald",style:{fontWeight:600,color:"#f1f5f9",lineHeight:1.3,marginBottom:"8px",fontSize:"17px"}},r.name),
-          h("div",{className:"flex items-center",style:{gap:"12px",fontSize:"12px",marginBottom:"12px",color:"var(--muted)"}},h("span",{className:"flex items-center",style:{gap:"4px"}},icon(IClock,12)," "+r.time+" min"),r.grabGo?h("span",null,"grab & go"):null,r.thermos?h("span",null,"thermos"):null),
-          h(MacroReadout,{macros:r.macros,compact:true})
-        )
-      );
-    }
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── DATA: JAR RECIPES ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const jarRecipes = [
+  { id:"bacon-egg-chive", emoji:"🥓", name:"Bacon, Egg & Chive", type:"savoury", time:"3 min + overnight", colour:"rose", macros:{fat:"38g",protein:"28g",carbs:"4g",calories:"480"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"1 tbsp"},{i:"Chicken bone broth",a:"½ cup"},{i:"Coconut cream",a:"¼ cup"},{i:"Sea salt",a:"pinch"},{i:"Black pepper",a:"pinch"}], toppings:[{i:"Pre-cooked bacon (crumbled)",a:"2–3 rashers"},{i:"Soft boiled egg (halved)",a:"1"},{i:"Fresh chives",a:"1 tbsp"},{i:"Hot sauce",a:"few drops"}], steps:["Add hemp hearts and chia seeds to your mason jar.","Pour in bone broth and coconut cream. Stir well.","Season with salt and pepper. Stir again.","Lid on — refrigerate overnight (min 6 hours).","Morning: top with crumbled bacon, soft boiled egg, chives and hot sauce.","Eat cold or 60 sec in a bowl if you want it warm."], tip:"Prep bacon and soft boil 6 eggs every Sunday — toppings take 60 seconds." },
+  { id:"southwest-chorizo", emoji:"🌶️", name:"Southwest Chorizo", type:"savoury", time:"3 min + overnight", colour:"orange", macros:{fat:"42g",protein:"26g",carbs:"5g",calories:"510"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"1 tbsp"},{i:"Chicken bone broth",a:"½ cup"},{i:"Coconut cream",a:"¼ cup"},{i:"Smoked paprika",a:"½ tsp"},{i:"Cumin",a:"¼ tsp"},{i:"Sea salt",a:"pinch"}], toppings:[{i:"Cooked chorizo (crumbled)",a:"¼ cup"},{i:"Avocado (diced)",a:"¼ avocado"},{i:"Sour cream or coconut cream",a:"1 tbsp"},{i:"Fresh cilantro",a:"1 tbsp"},{i:"Lime juice",a:"squeeze"}], steps:["Add hemp hearts and chia seeds to mason jar.","Mix smoked paprika and cumin into the bone broth before pouring.","Add coconut cream and seasoned broth to jar. Stir thoroughly.","Lid on — refrigerate overnight.","Morning: top with chorizo, diced avocado, sour cream, cilantro and a squeeze of lime."], tip:"Cook a whole pack of chorizo Sunday — crumble and store for the week." },
+  { id:"italian-prosciutto", emoji:"🧀", name:"Italian Herb & Prosciutto", type:"savoury", time:"3 min + overnight", colour:"amber", macros:{fat:"36g",protein:"24g",carbs:"4g",calories:"460"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"1 tbsp"},{i:"Chicken bone broth",a:"½ cup"},{i:"Coconut cream",a:"¼ cup"},{i:"Italian seasoning",a:"½ tsp"},{i:"Garlic powder",a:"¼ tsp"},{i:"Sea salt",a:"pinch"}], toppings:[{i:"Prosciutto (torn)",a:"2–3 slices"},{i:"Cherry tomatoes (halved)",a:"4–5"},{i:"Fresh basil (torn)",a:"few leaves"},{i:"Parmesan (shaved)",a:"1 tbsp"},{i:"Extra virgin olive oil",a:"drizzle"}], steps:["Add hemp hearts and chia seeds to mason jar.","Stir Italian seasoning and garlic powder into bone broth.","Pour seasoned broth and coconut cream into jar. Mix well.","Season with salt. Lid on — refrigerate overnight.","Morning: drape prosciutto, add cherry tomatoes, fresh basil, parmesan and a drizzle of good olive oil."], tip:"Don't skip the olive oil drizzle — it pulls everything together." },
+  { id:"everything-bagel", emoji:"🐟", name:"Everything Bagel (Sesame-Free)", type:"savoury", time:"3 min + overnight", colour:"sky", warning:true, macros:{fat:"34g",protein:"30g",carbs:"4g",calories:"450"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"1 tbsp"},{i:"Chicken bone broth",a:"½ cup"},{i:"Coconut cream",a:"¼ cup"},{i:"Garlic flakes",a:"¼ tsp"},{i:"Onion flakes",a:"¼ tsp"},{i:"Sea salt (coarse)",a:"¼ tsp"}], toppings:[{i:"Cream cheese (lactose-free)",a:"1 tbsp"},{i:"Smoked salmon / lox",a:"2–3 slices"},{i:"Capers",a:"1 tsp"},{i:"Red onion (finely diced)",a:"1 tsp"},{i:"Fresh dill",a:"few sprigs"}], steps:["Add hemp hearts and chia seeds to mason jar.","Stir garlic flakes, onion flakes and coarse salt into bone broth.","Pour seasoned broth and coconut cream into jar. Stir well.","Lid on — refrigerate overnight.","Morning: dollop cream cheese, layer smoked salmon, scatter capers, red onion and fresh dill."], tip:"⚠️ Standard everything bagel seasoning contains sesame — make your own with garlic flakes, onion flakes and coarse salt only." },
+  { id:"chocolate-pb", emoji:"🍫", name:"Chocolate Peanut Butter", type:"sweet", time:"3 min + overnight", colour:"violet", macros:{fat:"40g",protein:"22g",carbs:"8g",calories:"490"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"2 tbsp"},{i:"Coconut flakes",a:"2 tbsp"},{i:"Almond milk (unsweetened)",a:"¾ cup"},{i:"Cocoa powder (unsweetened)",a:"1 tbsp"},{i:"Natural peanut butter",a:"1 tbsp"},{i:"Liquid stevia",a:"4–6 drops"},{i:"Sea salt",a:"small pinch"}], toppings:[{i:"Extra peanut butter drizzle",a:"½ tsp"},{i:"Toasted coconut flakes",a:"1 tsp"}], steps:["Add hemp hearts, chia seeds and coconut flakes to mason jar.","Whisk cocoa powder and peanut butter into almond milk until smooth.","Add stevia drops and a pinch of salt to the milk mixture.","Pour over dry ingredients. Stir very well.","Lid on — refrigerate overnight.","Morning: drizzle extra peanut butter, scatter toasted coconut."], tip:"Tastes like dessert for breakfast. The pinch of salt is essential — enhances the chocolate." },
+  { id:"berry-vanilla", emoji:"🫐", name:"Berry Vanilla Cream", type:"sweet", time:"3 min + overnight", colour:"pink", macros:{fat:"38g",protein:"18g",carbs:"9g",calories:"460"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"2 tbsp"},{i:"Coconut flakes",a:"2 tbsp"},{i:"Coconut milk (full fat)",a:"¾ cup"},{i:"Vanilla extract",a:"½ tsp"},{i:"Liquid stevia",a:"4 drops"}], toppings:[{i:"Fresh blueberries or raspberries",a:"¼ cup"},{i:"Coconut cream dollop",a:"1 tbsp"}], steps:["Add hemp hearts, chia seeds and coconut flakes to mason jar.","Mix vanilla extract and stevia into coconut milk.","Pour over dry ingredients. Stir well.","Stir in half the berries now — they infuse overnight beautifully.","Lid on — refrigerate overnight.","Morning: top with remaining fresh berries and a dollop of coconut cream."], tip:"Use frozen berries in the base (they thaw overnight) and save fresh ones for the morning topping." },
+  { id:"coconut-cinnamon", emoji:"🥥", name:"Toasted Coconut & Cinnamon", type:"sweet", time:"3 min + overnight", colour:"yellow", macros:{fat:"42g",protein:"18g",carbs:"7g",calories:"475"}, base:[{i:"Hemp hearts",a:"4 tbsp"},{i:"Chia seeds",a:"2 tbsp"},{i:"Coconut flakes",a:"3 tbsp"},{i:"Coconut milk (full fat)",a:"¾ cup"},{i:"Cinnamon (ground)",a:"1 tsp"},{i:"Nutmeg",a:"pinch"},{i:"Liquid stevia",a:"4 drops"}], toppings:[{i:"Coconut flakes (toasted in dry pan)",a:"1 tbsp"},{i:"Almond butter drizzle",a:"1 tsp"},{i:"Extra cinnamon",a:"pinch"}], steps:["Add hemp hearts, chia seeds and coconut flakes to mason jar.","Stir cinnamon, nutmeg and stevia into coconut milk.","Pour over dry ingredients. Stir well.","Lid on — refrigerate overnight.","Sunday night: toast a batch of coconut flakes in a dry pan (2 min — watch it!).","Morning: top with toasted coconut, almond butter drizzle and a dusting of cinnamon."], tip:"Toast a big batch of coconut flakes Sunday and use all week." },
+];
 
-    function RecipeDetail(props){
-      var r=props.recipe,m=MEAL_META[r.meal];
-      var st=useState("Mon"),addDay=st[0],setAddDay=st[1];
-      var st2=useState(r.meal==="snack"?"lunch":r.meal),addMeal=st2[0],setAddMeal=st2[1];
-      var st3=useState(false),justAdded=st3[0],setJustAdded=st3[1];
-      return h("div",{className:"fixed flex",style:{inset:0,zIndex:40,justifyContent:"flex-end"}},
-        h("div",{className:"modal-overlay",onClick:props.onClose}),
-        h("div",{className:"overflow-y-auto",style:{position:"relative",width:"100%",maxWidth:"448px",height:"100%",backgroundColor:"var(--panel)"}},
-          h("div",{className:"sticky flex items-center justify-between",style:{top:0,zIndex:10,padding:"16px 20px",backgroundColor:"var(--panel)",borderBottom:"1px solid var(--line)"}},h(MealTag,{meal:r.meal}),h("button",{onClick:props.onClose,style:{padding:"4px",color:"#94a3b8"}},icon(IX,20))),
-          h("div",{style:{padding:"20px 20px 0"}},
-            h("span",{className:"mono",style:{fontSize:"10px",color:"var(--dim)"}},"TICKET No "+r.id.toUpperCase()),
-            h("h2",{className:"oswald",style:{marginTop:"4px",marginBottom:"12px",color:"#f1f5f9",fontSize:"26px",fontWeight:600}},r.name),
-            h("div",{className:"flex items-center",style:{gap:"16px",fontSize:"14px",marginBottom:"16px",color:"var(--muted)"}},h("span",{className:"flex items-center",style:{gap:"4px"}},icon(IClock,14)," "+r.time+" min"),r.flavor.map(function(f){return h("span",{key:f,className:"capitalize"},f);})),
-            h("div",{className:"card",style:{padding:"12px",marginBottom:"24px"}},h(MacroReadout,{macros:r.macros})),
-            h("h4",{className:"oswald uppercase",style:{fontSize:"12px",letterSpacing:"0.1em",marginBottom:"12px",color:"var(--dim)"}},"Ingredients"),
-            h("ul",{style:{marginBottom:"24px",display:"flex",flexDirection:"column",gap:"8px"}},r.ingredients.map(function(i){var have=props.haveIngredients[i.name];return h("li",{key:i.name},h("button",{onClick:function(){props.togglePantryItem(i.name);},className:"w-full flex items-center",style:{gap:"12px",textAlign:"left"}},h("span",{className:"flex items-center justify-center shrink-0",style:{width:"16px",height:"16px",borderRadius:"3px",backgroundColor:have?m.color:"transparent",border:"1px solid "+(have?m.color:"var(--dim2)")}},have?icon(ICheck,11,"#0b1120"):null),h("span",{style:{fontSize:"14px",color:have?"var(--text)":"var(--muted)"}},i.label)));})),
-            h("h4",{className:"oswald uppercase",style:{fontSize:"12px",letterSpacing:"0.1em",marginBottom:"12px",color:"var(--dim)"}},"Method"),
-            h("ol",{style:{marginBottom:"32px",display:"flex",flexDirection:"column",gap:"12px"}},r.steps.map(function(s,idx){return h("li",{key:idx,className:"flex",style:{gap:"12px",fontSize:"14px",color:"#e2e8f0",lineHeight:1.6}},h("span",{className:"mono shrink-0",style:{color:m.color}},(idx+1<10?"0":"")+(idx+1)),s);})),
-            h("div",{className:"card",style:{padding:"16px",marginBottom:"32px"}},
-              h("h4",{className:"oswald uppercase",style:{fontSize:"12px",letterSpacing:"0.1em",marginBottom:"12px",color:"var(--dim)"}},"Add to plan"),
-              h("div",{className:"flex",style:{gap:"8px",marginBottom:"12px"}},
-                h("select",{value:addDay,onChange:function(e){setAddDay(e.target.value);},style:{flex:1}},DAYS.map(function(d){return h("option",{key:d,value:d},d);})),
-                h("select",{value:addMeal,onChange:function(e){setAddMeal(e.target.value);},style:{flex:1}},MEALS.map(function(mm){return h("option",{key:mm,value:mm},MEAL_META[mm].label);}))
-              ),
-              h("button",{onClick:function(){props.onAssign(addDay,addMeal,r.id);setJustAdded(true);setTimeout(function(){setJustAdded(false);},1500);},className:"w-full flex items-center justify-center",style:{gap:"8px",borderRadius:"4px",padding:"10px",fontSize:"14px",fontWeight:600,backgroundColor:"var(--orange)",color:"#0b1120"}},justAdded?["Added ",icon(ICheck,15,"#0b1120")]:["Add to plan ",icon(IPlus,15)])
-            )
-          )
-        )
-      );
-    }
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── DATA: SUNDAY PREP ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const prepSections = [
+  { title:"☕ Before You Start", time:"5 min", colour:"slate", tasks:[{task:"Put on a good playlist or podcast",detail:"This is your power hour — make it enjoyable"},{task:"Make a big black coffee",detail:"Fuel for the chef"},{task:"Clear your bench and lay out all containers",detail:"Mason jars, meal prep boxes, thermos containers"},{task:"Check your fridge — pull out everything you'll use",detail:"Eggs, bacon, chorizo, chicken, veg"}]},
+  { title:"🥓 Batch Cook — Proteins", time:"35–40 min", colour:"rose", tasks:[{task:"Cook full pack of bacon in oven at 400°F",detail:"Line baking sheet with foil — 15–18 min. Crumble when cool, store in sealed container"},{task:"Soft boil 6–8 eggs",detail:"Boiling water → eggs in → 7 min → ice bath → peel → store in cold water in fridge"},{task:"Cook chorizo or Italian sausage in skillet",detail:"Break up as it cooks — 8–10 min. Drain fat, cool, store in container"},{task:"Season and grill 4–6 chicken thighs",detail:"Salt, pepper, garlic powder, olive oil — oven 400°F for 35 min skin-side up. Cool, store whole"},{task:"Brown 1 lb ground beef",detail:"Season with salt, pepper, garlic — store in container for quick dinners"}]},
+  { title:"🥦 Sheet Pan Vegetables", time:"25–30 min", colour:"emerald", tasks:[{task:"Chop zucchini, bell peppers, cherry tomatoes, red onion",detail:"Rough chunks — don't overthink it"},{task:"Toss in olive oil, salt, pepper, Italian seasoning",detail:"Two sheet pans — don't crowd them or they steam instead of roast"},{task:"Roast at 425°F for 20–25 min",detail:"Flip halfway. You want caramelised edges, not soggy veg"},{task:"Cool completely before storing",detail:"Store in glass container — lasts 5 days in fridge"}]},
+  { title:"🫙 Assemble the 5 Jars", time:"15 min", colour:"violet", tasks:[{task:"Line up 5 clean wide-mouth mason jars",detail:"Label each with a sticky note — day of the week"},{task:"Add dry base ingredients to each jar",detail:"Hemp hearts + chia seeds + coconut flakes (sweet) into all 5"},{task:"Prepare savoury jar liquid bases",detail:"Mix bone broth + coconut cream + seasonings in a measuring jug — pour into savoury jars"},{task:"Prepare sweet jar liquid bases",detail:"Mix coconut milk or almond milk + vanilla/cocoa/stevia — pour into sweet jars"},{task:"Stir each jar well",detail:"Chia seeds especially need to be fully dispersed"},{task:"Lids on — into the fridge",detail:"Arranged Mon → Fri front to back so Monday is easiest to grab"}]},
+  { title:"🧑‍🍳 Prep Toppings & Extras", time:"10 min", colour:"amber", tasks:[{task:"Toast a batch of coconut flakes",detail:"Dry pan, medium heat, 2 min — watch it! Goes from perfect to burnt fast. Store in small jar"},{task:"Portion out avocados for the week",detail:"Don't cut yet — just set aside 5 at varying ripeness stages"},{task:"Wash and dry all fresh herbs",detail:"Wrap in damp paper towel, store in bag — lasts much longer this way"},{task:"Wash all fresh fruit and berries",detail:"Store in shallow containers lined with paper towel"},{task:"Hard boil 2 extra eggs for snacking",detail:"Quick protein grab mid-week"},{task:"Pre-portion charcuterie items",detail:"Salami, prosciutto, cheese cubes — in small containers for easy lunch boxes"}]},
+  { title:"🧹 Clean As You Go", time:"10 min", colour:"teal", tasks:[{task:"Wash all prep bowls, pans and utensils",detail:"Future you will be very grateful Monday morning"},{task:"Wipe down all surfaces",detail:"Clean kitchen = clear mind"},{task:"Check your fridge is organised",detail:"Jars front, proteins labelled, veg accessible"},{task:"Note anything you're running low on",detail:"Add to shopping list before you forget"}]},
+  { title:"✅ Final Check", time:"2 min", colour:"emerald", tasks:[{task:"5 jars in the fridge ✓",detail:""},{task:"Cooked bacon stored ✓",detail:""},{task:"6–8 soft boiled eggs in cold water ✓",detail:""},{task:"Cooked chorizo / sausage stored ✓",detail:""},{task:"Grilled chicken thighs stored ✓",detail:""},{task:"Roasted veg in container ✓",detail:""},{task:"Fresh herbs washed and stored ✓",detail:""},{task:"Fruit washed and stored ✓",detail:""},{task:"Lunch boxes & thermos clean and ready ✓",detail:""}]},
+];
 
-    function CookbookTab(props){
-      var s1=useState(""),search=s1[0],setSearch=s1[1];
-      var s2=useState("all"),mealFilter=s2[0],setMealFilter=s2[1];
-      var s3=useState({}),flavorFilters=s3[0],setFlavorFilters=s3[1];
-      var s4=useState({}),quick=s4[0],setQuick=s4[1];
-      function toggleObj(setter,obj,val){var n={};for(var k in obj)n[k]=obj[k];if(n[val])delete n[val];else n[val]=1;setter(n);}
-      var filtered=RECIPES.filter(function(r){
-        if(mealFilter!=="all"&&r.meal!==mealFilter)return false;
-        if(search&&r.name.toLowerCase().indexOf(search.toLowerCase())===-1)return false;
-        var ff=Object.keys(flavorFilters);if(ff.length){var ok=false;r.flavor.forEach(function(f){if(flavorFilters[f])ok=true;});if(!ok)return false;}
-        if(quick.quick&&r.time>15)return false;
-        if(quick.grabGo&&!r.grabGo)return false;
-        if(quick.thermos&&!r.thermos)return false;
-        if(quick.sundayPrep&&!r.sundayPrep)return false;
-        return true;
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── DATA: CUPBOARD ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const cupboardCategories = [
+  { id:"proteins", label:"🥩 Proteins & Meat", color:"rose", items:["Bacon","Chorizo","Ground beef","Chicken thighs","Pork chops","Lamb chops","Prosciutto","Salami","Canned tuna","Canned salmon","Smoked salmon","Eggs"]},
+  { id:"fridge", label:"🧀 Fridge & Dairy Alt", color:"amber", items:["Butter","Cream cheese (lactose-free)","Coconut cream","Coconut milk","Almond milk","Feta","Parmesan","Aged cheddar","Coconut yoghurt","Sour cream"]},
+  { id:"freezer", label:"🧊 Freezer", color:"sky", items:["Frozen shrimp / prawns","Frozen berries","Frozen cauliflower rice","Frozen ground beef","Frozen chicken thighs","Frozen salmon fillets","Frozen pork belly"]},
+  { id:"veg", label:"🥑 Fresh Veg & Fruit", color:"emerald", items:["Avocados","Zucchini","Spinach","Cherry tomatoes","Cucumber","Bell peppers","Cauliflower","Broccoli","Asparagus","Green beans","Mushrooms","Garlic","Ginger","Green onions","Fresh herbs","Lemons","Limes","Berries","Watermelon","Peaches"]},
+  { id:"pantry", label:"🫙 Pantry & Jars", color:"violet", items:["Hemp hearts","Chia seeds","Coconut flakes","Bone broth (chicken)","Bone broth (beef)","Coconut aminos","Olive oil","Avocado oil","Almond butter","Peanut butter","Cocoa powder","Vanilla extract","Liquid stevia","Tomato passata","Olives","Capers"]},
+  { id:"spices", label:"🧂 Spices & Condiments", color:"orange", items:["Sea salt","Black pepper","Smoked paprika","Cumin","Italian seasoning","Garlic powder","Cinnamon","Chilli flakes","Dijon mustard","Hot sauce","Mayonnaise","Cream of tartar"]},
+];
+
+const allMealPlanMeals = mealWeeks.flatMap(w => w.days.flatMap(d => [
+  { meal: d.breakfast.meal, type: "Breakfast", emoji: d.breakfast.emoji, day: d.day, week: w.label },
+  { meal: d.lunch.meal,     type: "Lunch",     emoji: d.lunch.emoji,     day: d.day, week: w.label },
+  { meal: d.dinner.meal,    type: "Dinner",    emoji: d.dinner.emoji,    day: d.day, week: w.label },
+]));
+
+function matchMealsToStock(stockItems) {
+  if (!stockItems.length) return [];
+  const keywords = stockItems.map(s => s.toLowerCase().replace(/[^a-z\s]/g,"").split(" ")).flat().filter(w => w.length > 3);
+  return allMealPlanMeals.filter(m => {
+    const ml = m.meal.toLowerCase();
+    return keywords.some(kw => ml.includes(kw));
+  }).slice(0, 8);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── DATA: WALK-IN COOKBOOK ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const MEAL_META = {
+  breakfast: { label: "Breakfast", color: "#f5b942" },
+  lunch:     { label: "Lunch",     color: "#2dd4bf" },
+  dinner:    { label: "Dinner",    color: "#fb7a3c" },
+  snack:     { label: "Snack",     color: "#a3e635" },
+};
+const CB_FLAVORS = ["spicy","smoky","garlicky","citrusy","herby","sweet","tangy"];
+const CB_CAT_ORDER = ["Protein","Produce","Dairy-Free & Fats","Pantry & Spice","Nuts & Safe Seeds"];
+const CB_CAT_MAP = {
+  "chicken thighs":"Protein","chicken breast":"Protein","ground beef":"Protein","sirloin steak":"Protein","shrimp":"Protein","salmon fillet":"Protein","smoked salmon":"Protein","italian sausage":"Protein","andouille sausage":"Protein","breakfast sausage":"Protein","chorizo":"Protein","eggs":"Protein","collagen protein powder":"Protein",
+  "bell pepper":"Produce","onion":"Produce","green onion":"Produce","garlic":"Produce","ginger":"Produce","celery":"Produce","cucumber":"Produce","tomato":"Produce","zucchini":"Produce","broccoli":"Produce","asparagus":"Produce","green beans":"Produce","spinach":"Produce","cauliflower rice":"Produce","butter lettuce":"Produce","avocado":"Produce","lime":"Produce","lemon":"Produce","cilantro":"Produce","parsley":"Produce","basil":"Produce",
+  "ghee":"Dairy-Free & Fats","olive oil":"Dairy-Free & Fats","coconut milk":"Dairy-Free & Fats","coconut cream":"Dairy-Free & Fats","almond milk":"Dairy-Free & Fats","coconut oil":"Dairy-Free & Fats","coconut butter":"Dairy-Free & Fats","dairy-free cream cheese":"Dairy-Free & Fats","avocado oil mayo":"Dairy-Free & Fats",
+  "buffalo sauce":"Pantry & Spice","coconut aminos":"Pantry & Spice","fish sauce":"Pantry & Spice","red curry paste":"Pantry & Spice","marinara sauce":"Pantry & Spice","capers":"Pantry & Spice","kalamata olives":"Pantry & Spice","hot sauce":"Pantry & Spice","apple cider vinegar":"Pantry & Spice","keto sweetener":"Pantry & Spice","vanilla extract":"Pantry & Spice","almond butter":"Pantry & Spice","cajun seasoning":"Pantry & Spice","taco seasoning":"Pantry & Spice","fajita seasoning":"Pantry & Spice","jerk seasoning":"Pantry & Spice","italian seasoning":"Pantry & Spice","greek seasoning":"Pantry & Spice","garlic-onion blend":"Pantry & Spice","gochugaru":"Pantry & Spice","cinnamon":"Pantry & Spice",
+  "almonds":"Nuts & Safe Seeds","pecans":"Nuts & Safe Seeds","hemp hearts":"Nuts & Safe Seeds","chia seeds":"Nuts & Safe Seeds","coconut flakes":"Nuts & Safe Seeds",
+};
+const ing = (name, label) => ({ name, label });
+const COOKBOOK = [
+  { id:"b1", meal:"breakfast", name:"Smoky Chorizo & Pepper Egg Jar", time:10, flavor:["smoky","spicy"], grabGo:true, thermos:true, sundayPrep:false, macros:{cal:420,fat:34,protein:24,netCarb:4}, ingredients:[ing("chorizo","4 oz chorizo, casing removed"),ing("eggs","3 eggs"),ing("bell pepper","1/2 bell pepper, diced"),ing("green onion","1 stalk, sliced"),ing("avocado","1/2 avocado"),ing("hot sauce","splash hot sauce")], steps:["Brown chorizo in a skillet, breaking it up, 4 min.","Add bell pepper, soften 2 min.","Whisk eggs, pour in, scramble until just set.","Pack into a jar with avocado, finish with hot sauce."]},
+  { id:"b2", meal:"breakfast", name:"Maple-Pecan Chia Pudding Jar", time:5, flavor:["sweet"], grabGo:true, thermos:false, sundayPrep:true, macros:{cal:310,fat:24,protein:8,netCarb:6}, ingredients:[ing("chia seeds","1/4 cup chia seeds"),ing("almond milk","3/4 cup almond milk"),ing("coconut cream","2 tbsp coconut cream"),ing("pecans","2 tbsp pecans, chopped"),ing("cinnamon","1/2 tsp cinnamon"),ing("keto sweetener","1 tbsp keto sweetener"),ing("vanilla extract","1/2 tsp vanilla")], steps:["Whisk almond milk, coconut cream, sweetener, vanilla, and cinnamon.","Stir in chia seeds, transfer to a jar.","Refrigerate overnight.","Top with pecans before eating."]},
+  { id:"b3", meal:"breakfast", name:"Garlic-Onion Bagel Egg Muffins", time:20, flavor:["smoky"], grabGo:true, thermos:false, sundayPrep:true, macros:{cal:280,fat:20,protein:19,netCarb:3}, ingredients:[ing("eggs","6 eggs"),ing("smoked salmon","3 oz smoked salmon"),ing("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ing("green onion","1 stalk, sliced"),ing("garlic-onion blend","1 tsp garlic-onion seasoning (sesame/poppy-free)")], steps:["Whisk eggs with the garlic-onion blend.","Pour into a greased muffin tin, bake 350°F for 15 min.","Dollop with cream cheese, flake in salmon.","Top with green onion."]},
+  { id:"b4", meal:"breakfast", name:"Western NY Diner Skillet", time:12, flavor:["spicy"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:460,fat:36,protein:26,netCarb:5}, ingredients:[ing("breakfast sausage","4 oz breakfast sausage"),ing("eggs","3 eggs"),ing("bell pepper","1/2 bell pepper, diced"),ing("onion","1/4 onion, diced"),ing("hot sauce","splash hot sauce"),ing("avocado","1/2 avocado")], steps:["Brown sausage 5 min.","Add peppers and onion, soften.","Push aside, scramble eggs in the same pan.","Combine, finish with hot sauce and avocado."]},
+  { id:"b5", meal:"breakfast", name:"Iced Mocha Protein Shake", time:5, flavor:["sweet"], grabGo:true, thermos:false, sundayPrep:false, macros:{cal:260,fat:16,protein:20,netCarb:5}, ingredients:[ing("almond milk","1 cup almond milk"),ing("coconut cream","1 tbsp coconut cream"),ing("collagen protein powder","1 scoop collagen protein"),ing("cinnamon","pinch cinnamon"),ing("vanilla extract","1/2 tsp vanilla")], steps:["Blend everything with ice until smooth.","Pour over fresh ice and go."]},
+  { id:"b6", meal:"breakfast", name:"Smoked Salmon & Avocado Jar", time:8, flavor:["citrusy"], grabGo:true, thermos:true, sundayPrep:false, macros:{cal:380,fat:28,protein:24,netCarb:6}, ingredients:[ing("smoked salmon","3 oz smoked salmon"),ing("avocado","1/2 avocado"),ing("cucumber","1/2 cucumber, sliced"),ing("capers","1 tsp capers"),ing("eggs","1 hard-boiled egg"),ing("lemon","wedge of lemon"),ing("olive oil","1 tsp olive oil")], steps:["Layer cucumber, smoked salmon, and sliced egg in a jar.","Top with avocado and capers.","Dress with olive oil and lemon right before eating."]},
+  { id:"b7", meal:"breakfast", name:"Sausage, Spinach & Garlic Egg Bake Bars", time:35, flavor:["garlicky"], grabGo:true, thermos:false, sundayPrep:true, macros:{cal:240,fat:18,protein:16,netCarb:2}, ingredients:[ing("breakfast sausage","8 oz breakfast sausage"),ing("eggs","8 eggs"),ing("spinach","2 cups spinach"),ing("garlic","2 cloves garlic, minced"),ing("ghee","1 tbsp ghee")], steps:["Brown sausage with garlic, wilt in spinach.","Whisk eggs, fold in the sausage mix.","Pour into a greased baking dish, bake 350°F for 25 min.","Cool, then slice into bars for the week."]},
+  { id:"l1", meal:"lunch", name:"Buffalo Chicken Cauli Rice Bowl", time:15, flavor:["spicy","tangy"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:520,fat:38,protein:34,netCarb:6}, ingredients:[ing("chicken thighs","6 oz chicken thighs, diced"),ing("buffalo sauce","3 tbsp buffalo sauce"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("celery","1 stalk, diced"),ing("avocado oil mayo","1 tbsp avocado oil mayo"),ing("green onion","1 stalk, sliced")], steps:["Sear diced chicken thighs until cooked through, 8 min.","Toss with buffalo sauce.","Sauté cauliflower rice 4 min, plate.","Top with chicken, celery, a drizzle of mayo, and green onion."]},
+  { id:"l2", meal:"lunch", name:"Korean Beef & Broccoli Bowl", time:15, flavor:["spicy","garlicky"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:540,fat:36,protein:33,netCarb:8}, ingredients:[ing("ground beef","6 oz ground beef"),ing("coconut aminos","2 tbsp coconut aminos"),ing("garlic","2 cloves garlic, minced"),ing("ginger","1 tsp ginger, grated"),ing("broccoli","1.5 cups broccoli"),ing("gochugaru","1 tsp gochugaru"),ing("green onion","1 stalk, sliced")], steps:["Brown beef with garlic and ginger, 6 min.","Stir in coconut aminos and gochugaru.","Steam or sauté broccoli, combine.","Top with green onion."]},
+  { id:"l3", meal:"lunch", name:"Greek Lemon Chicken Jar", time:15, flavor:["citrusy","herby"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:470,fat:32,protein:31,netCarb:7}, ingredients:[ing("chicken thighs","6 oz chicken thighs"),ing("greek seasoning","1 tbsp Greek seasoning"),ing("lemon","1/2 lemon"),ing("cucumber","1/2 cucumber, diced"),ing("tomato","1/2 cup tomato, diced"),ing("kalamata olives","8 kalamata olives"),ing("olive oil","1 tbsp olive oil")], steps:["Season chicken thighs with Greek seasoning, sear 10 min.","Layer cucumber, tomato, and olives in a jar.","Add sliced chicken on top.","Finish with olive oil and lemon."]},
+  { id:"l4", meal:"lunch", name:"Cajun Shrimp Zoodle Bowl", time:12, flavor:["spicy","citrusy"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:410,fat:28,protein:30,netCarb:6}, ingredients:[ing("shrimp","6 oz shrimp"),ing("cajun seasoning","1 tbsp cajun seasoning"),ing("zucchini","1 zucchini, spiralized"),ing("garlic","1 clove garlic, minced"),ing("ghee","1 tbsp ghee"),ing("lemon","wedge of lemon"),ing("parsley","1 tbsp parsley, chopped")], steps:["Toss shrimp in cajun seasoning.","Sear in ghee with garlic, 2 min per side.","Toss in zoodles just to warm through.","Finish with lemon and parsley."]},
+  { id:"l5", meal:"lunch", name:"Taco Bowl with Cilantro-Lime Cauli Rice", time:15, flavor:["spicy","citrusy"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:500,fat:34,protein:32,netCarb:7}, ingredients:[ing("ground beef","6 oz ground beef"),ing("taco seasoning","1.5 tbsp taco seasoning"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("avocado","1/2 avocado"),ing("lime","1/2 lime"),ing("cilantro","2 tbsp cilantro, chopped")], steps:["Brown beef with taco seasoning, 6 min.","Sauté cauliflower rice with lime and cilantro.","Plate rice, top with beef and avocado."]},
+  { id:"l6", meal:"lunch", name:"Italian Sausage & Pepper Skillet Jar", time:15, flavor:["herby","garlicky"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:480,fat:36,protein:24,netCarb:7}, ingredients:[ing("italian sausage","6 oz italian sausage"),ing("bell pepper","1 bell pepper, sliced"),ing("onion","1/2 onion, sliced"),ing("garlic","2 cloves garlic, minced"),ing("marinara sauce","1/3 cup marinara sauce"),ing("italian seasoning","1 tsp Italian seasoning")], steps:["Slice and brown sausage, 6 min.","Add peppers, onion, and garlic, soften.","Stir in marinara and Italian seasoning, simmer 5 min, jar it."]},
+  { id:"l7", meal:"lunch", name:"Thai Coconut Curry Chicken Jar", time:18, flavor:["spicy","herby"], grabGo:false, thermos:true, sundayPrep:false, macros:{cal:510,fat:38,protein:28,netCarb:8}, ingredients:[ing("chicken thighs","6 oz chicken thighs, diced"),ing("red curry paste","1.5 tbsp red curry paste"),ing("coconut milk","1/2 cup coconut milk"),ing("bell pepper","1/2 bell pepper, sliced"),ing("fish sauce","1 tsp fish sauce"),ing("basil","small handful basil"),ing("lime","wedge of lime")], steps:["Sear diced chicken, 5 min.","Stir in curry paste, bloom 1 min.","Add coconut milk, peppers, and fish sauce, simmer 8 min.","Finish with basil and lime."]},
+  { id:"d1", meal:"dinner", name:"Garlic Butter Steak Bites & Asparagus", time:15, flavor:["garlicky","herby"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:560,fat:42,protein:36,netCarb:4}, ingredients:[ing("sirloin steak","8 oz sirloin, cubed"),ing("ghee","2 tbsp ghee"),ing("garlic","3 cloves garlic, minced"),ing("asparagus","1 bunch asparagus"),ing("parsley","1 tbsp parsley, chopped")], steps:["Cube steak, pat dry, season well.","Sear in ghee 2-3 min per side, add garlic the last minute.","Sauté asparagus in the same pan.","Rest steak, finish with parsley."]},
+  { id:"d2", meal:"dinner", name:"Sheet-Pan Cajun Sausage & Veggies", time:20, flavor:["spicy","smoky"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:520,fat:40,protein:26,netCarb:7}, ingredients:[ing("andouille sausage","8 oz andouille sausage, sliced"),ing("broccoli","1.5 cups broccoli"),ing("bell pepper","1 bell pepper, sliced"),ing("cajun seasoning","1 tbsp cajun seasoning"),ing("olive oil","2 tbsp olive oil")], steps:["Toss sliced sausage and veggies with oil and cajun seasoning.","Roast at 425°F for 18 min, stirring once."]},
+  { id:"d3", meal:"dinner", name:"Pan-Seared Salmon, Lemon-Caper, Green Beans", time:15, flavor:["citrusy","herby"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:480,fat:34,protein:34,netCarb:5}, ingredients:[ing("salmon fillet","7 oz salmon fillet"),ing("ghee","1.5 tbsp ghee"),ing("lemon","1/2 lemon"),ing("capers","1 tbsp capers"),ing("garlic","1 clove garlic, minced"),ing("green beans","1.5 cups green beans")], steps:["Sear salmon skin-down in ghee, 4 min per side.","Sauté green beans with garlic in a second pan.","Deglaze the salmon pan with lemon and capers, spoon over."]},
+  { id:"d4", meal:"dinner", name:"15-Minute Chicken Fajita Skillet", time:15, flavor:["spicy","citrusy"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:440,fat:26,protein:38,netCarb:7}, ingredients:[ing("chicken breast","7 oz chicken breast, sliced thin"),ing("fajita seasoning","1.5 tbsp fajita seasoning"),ing("bell pepper","1 bell pepper, sliced"),ing("onion","1/2 onion, sliced"),ing("avocado","1/2 avocado"),ing("lime","wedge of lime")], steps:["Slice chicken thin, toss with fajita seasoning.","Sear 4 min, add peppers and onion, cook 6 min more.","Finish with lime, top with avocado."]},
+  { id:"d5", meal:"dinner", name:"Spicy Korean Beef Lettuce Wraps", time:15, flavor:["spicy","garlicky"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:460,fat:32,protein:30,netCarb:5}, ingredients:[ing("ground beef","6 oz ground beef"),ing("coconut aminos","2 tbsp coconut aminos"),ing("gochugaru","1 tsp gochugaru"),ing("garlic","2 cloves garlic, minced"),ing("ginger","1 tsp ginger, grated"),ing("butter lettuce","1 head butter lettuce"),ing("green onion","1 stalk, sliced")], steps:["Brown beef with garlic and ginger.","Stir in coconut aminos and gochugaru.","Spoon into lettuce cups, top with green onion."]},
+  { id:"d6", meal:"dinner", name:"Shrimp Scampi Zoodles", time:15, flavor:["garlicky","citrusy"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:420,fat:30,protein:28,netCarb:5}, ingredients:[ing("shrimp","6 oz shrimp"),ing("ghee","2 tbsp ghee"),ing("garlic","3 cloves garlic, minced"),ing("lemon","1/2 lemon"),ing("parsley","1 tbsp parsley, chopped"),ing("zucchini","1 zucchini, spiralized"),ing("apple cider vinegar","1 tsp apple cider vinegar")], steps:["Sear shrimp in ghee, 2 min per side, remove.","Add garlic, lemon, and a splash of vinegar to the pan.","Toss in zoodles and shrimp to warm through, finish with parsley."]},
+  { id:"d7", meal:"dinner", name:"Jerk Chicken Thighs & Coconut Cauli Rice", time:20, flavor:["spicy","citrusy"], grabGo:false, thermos:false, sundayPrep:false, macros:{cal:510,fat:34,protein:36,netCarb:6}, ingredients:[ing("chicken thighs","8 oz chicken thighs"),ing("jerk seasoning","1.5 tbsp jerk seasoning"),ing("cauliflower rice","1.5 cups cauliflower rice"),ing("coconut milk","1/3 cup coconut milk"),ing("lime","wedge of lime")], steps:["Rub chicken with jerk seasoning (marinate ahead if you can).","Sear 6-7 min per side until cooked through.","Simmer cauliflower rice in coconut milk 5 min.","Plate together, squeeze lime."]},
+  { id:"s1", meal:"snack", name:"Hemp Heart Energy Bites", time:10, flavor:["sweet"], grabGo:true, thermos:false, sundayPrep:true, macros:{cal:190,fat:16,protein:5,netCarb:3}, ingredients:[ing("almond butter","1/2 cup almond butter"),ing("hemp hearts","1/4 cup hemp hearts"),ing("coconut flakes","2 tbsp coconut flakes"),ing("cinnamon","1/2 tsp cinnamon"),ing("keto sweetener","1 tbsp keto sweetener"),ing("vanilla extract","1/2 tsp vanilla")], steps:["Mix everything into a thick dough.","Roll into bites.","Chill 30 min, store in the fridge."]},
+  { id:"s2", meal:"snack", name:"Spicy Roasted Almonds & Pecans", time:15, flavor:["spicy","smoky"], grabGo:true, thermos:false, sundayPrep:true, macros:{cal:220,fat:20,protein:6,netCarb:3}, ingredients:[ing("almonds","1/2 cup almonds"),ing("pecans","1/2 cup pecans"),ing("ghee","1 tbsp ghee, melted"),ing("cajun seasoning","1 tsp cajun seasoning")], steps:["Toss nuts with melted ghee and cajun seasoning.","Roast at 325°F for 12 min, stirring once.","Cool fully before storing."]},
+  { id:"s3", meal:"snack", name:"Buffalo Chicken Dip Jar with Celery", time:10, flavor:["spicy","tangy"], grabGo:true, thermos:false, sundayPrep:false, macros:{cal:280,fat:22,protein:16,netCarb:3}, ingredients:[ing("chicken thighs","4 oz cooked chicken, shredded"),ing("buffalo sauce","2 tbsp buffalo sauce"),ing("dairy-free cream cheese","2 tbsp dairy-free cream cheese"),ing("celery","2 stalks celery")], steps:["Shred cooked chicken, warm with buffalo sauce and cream cheese until melty.","Jar it with celery sticks for dipping."]},
+  { id:"s4", meal:"snack", name:"Coconut-Lime Fat Bombs", time:10, flavor:["sweet","citrusy"], grabGo:true, thermos:false, sundayPrep:true, macros:{cal:200,fat:20,protein:2,netCarb:2}, ingredients:[ing("coconut butter","1/3 cup coconut butter"),ing("coconut oil","2 tbsp coconut oil"),ing("lime","zest of 1 lime"),ing("coconut flakes","2 tbsp coconut flakes"),ing("keto sweetener","1 tbsp keto sweetener")], steps:["Melt coconut butter and oil together.","Stir in lime zest and sweetener.","Pour into molds, top with coconut flakes, freeze 1 hr."]},
+];
+const ALL_CB_INGREDIENTS = Array.from(new Set(COOKBOOK.flatMap(r => r.ingredients.map(i => i.name)))).sort();
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SHARED COMPONENTS ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function CheckItem({ label, detail, checked, onToggle, colorKey }) {
+  const c = cMap[colorKey] || cMap.slate;
+  return (
+    <button onClick={onToggle} className={`w-full flex items-start gap-3 py-2 px-2 rounded-lg text-left hover:bg-white/5 transition-all ${checked ? "opacity-40" : ""}`}>
+      <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-all ${checked ? `${c.check} border-transparent` : "border-slate-600"}`}>
+        {checked && <span className="text-white text-xs font-bold">✓</span>}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`text-sm ${checked ? "line-through text-slate-500" : "text-white"}`}>{label}</div>
+        {detail && <div className="text-xs text-slate-500 mt-0.5">{detail}</div>}
+      </div>
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCREEN: MEAL PLAN ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const mealColors = {
+  breakfast: { label:"Breakfast", accent:"text-amber-400", dot:"bg-amber-400" },
+  lunch:     { label:"Lunch",     accent:"text-sky-400",   dot:"bg-sky-400"   },
+  dinner:    { label:"Dinner",    accent:"text-orange-400",dot:"bg-orange-400" },
+};
+const dayTypeStyles = {
+  weekday:      { badge:"bg-slate-800 text-slate-400", border:"border-slate-700/40" },
+  "weekend-light":{ badge:"bg-sky-900/40 text-sky-300", border:"border-sky-700/30" },
+  "prep-day":   { badge:"bg-amber-900/40 text-amber-300", border:"border-amber-700/30" },
+};
+
+function MealPlanScreen() {
+  const [week, setWeek] = useState(0);
+  const [openDays, setOpenDays] = useState({ Monday: true });
+  const toggleDay = (d) => setOpenDays(p => ({ ...p, [d]: !p[d] }));
+  const wk = mealWeeks[week];
+  return (
+    <div>
+      <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
+        {mealWeeks.map((w, i) => (
+          <button key={i} onClick={() => setWeek(i)}
+            className={`flex-shrink-0 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${week===i ? "bg-emerald-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+            {w.label}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {wk.days.map(day => {
+          const ts = dayTypeStyles[day.type] || dayTypeStyles.weekday;
+          const isOpen = openDays[day.day];
+          return (
+            <div key={day.day} className={`rounded-xl border ${ts.border} bg-slate-900/60 overflow-hidden`}>
+              <button onClick={() => toggleDay(day.day)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-white text-sm">{day.day}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${ts.badge}`}>{day.type.replace("-"," ")}</span>
+                </div>
+                <span className={`text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+              </button>
+              {isOpen && (
+                <div className="px-4 pb-4 space-y-3 border-t border-slate-700/40 pt-3">
+                  {["breakfast","lunch","dinner"].map(mk => {
+                    const meal = day[mk]; const mc = mealColors[mk];
+                    return (
+                      <div key={mk} className="flex gap-3">
+                        <div className="flex flex-col items-center pt-1">
+                          <div className={`w-2 h-2 rounded-full ${mc.dot} mt-1`} />
+                          <div className="w-px flex-1 bg-slate-700/40 mt-1" />
+                        </div>
+                        <div className="flex-1 pb-1">
+                          <div className={`text-xs font-bold uppercase tracking-widest ${mc.accent} mb-1`}>{mc.label}</div>
+                          <div className="text-sm text-white font-medium leading-snug">{meal.emoji} {meal.meal}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{meal.note}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex gap-3">
+                    <div className="pt-1"><div className="w-2 h-2 rounded-full bg-pink-400 mt-1" /></div>
+                    <div><div className="text-xs font-bold uppercase tracking-widest text-pink-400 mb-1">Fruit</div>
+                    <div className="text-sm text-white">🍓 {day.fruit}</div></div>
+                  </div>
+                  {day.prepNote && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                      <p className="text-xs text-amber-300">{day.prepNote}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCREEN: SHOPPING ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function ShopSectionCard({ section, sKey, checked, onToggle }) {
+  const [open, setOpen] = useState(true);
+  const c = cMap[section.color] || cMap.slate;
+  const done = section.items.filter((_,i) => checked[`${sKey}-${i}`]).length;
+  return (
+    <div className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+      <button onClick={() => setOpen(!open)} className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-2">
+          <span className={`font-bold text-sm ${c.header}`}>{section.section}</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${c.badge}`}>{done}/{section.items.length}</span>
+        </div>
+        <span className={`text-slate-400 text-sm transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-2 space-y-0.5 border-t border-white/5 pt-2">
+          {section.items.map((item, i) => {
+            const key = `${sKey}-${i}`; const isChecked = checked[key];
+            return (
+              <button key={i} onClick={() => onToggle(key)}
+                className={`w-full flex items-center gap-3 py-1.5 px-2 rounded-lg text-left hover:bg-white/5 transition-all ${isChecked ? "opacity-40" : ""}`}>
+                <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${isChecked ? `${c.dot} border-transparent` : "border-slate-600"}`}>
+                  {isChecked && <span className="text-white text-xs font-bold">✓</span>}
+                </div>
+                <span className={`flex-1 text-sm ${isChecked ? "line-through text-slate-500" : "text-white"}`}>
+                  {item.name}{item.staple && !isChecked && <span className="ml-1.5 text-xs text-amber-400">⭐</span>}
+                </span>
+                <span className={`text-xs flex-shrink-0 ${isChecked ? "text-slate-600" : "text-slate-400"}`}>{item.amount}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShoppingScreen({ checked, onToggle, onReset }) {
+  const [shopTab, setShopTab] = useState("w0");
+  const isWeek = shopTab.startsWith("w");
+  const weekIdx = isWeek ? parseInt(shopTab.slice(1)) : null;
+  const currentWeek = (isWeek && !isNaN(weekIdx)) ? shopWeeks[weekIdx] : null;
+  const isPantry = shopTab === "pantry";
+  const countFor = (sections, prefix) => {
+    let total=0, done=0;
+    sections.forEach((s,si) => s.items.forEach((_,ii) => { total++; if(checked[`${prefix}-${si}-${ii}`]) done++; }));
+    return {total,done};
+  };
+  const activeSections = currentWeek ? currentWeek.sections : isPantry ? pantryOnce.sections : [];
+  const activePrefix = currentWeek ? `w${weekIdx}` : "pantry";
+  const {total,done} = activeSections.length ? countFor(activeSections, activePrefix) : {total:0,done:0};
+  const progress = total ? Math.round((done/total)*100) : 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-2xl font-bold text-emerald-400">{progress}%</div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400">{done}/{total} items</span>
+          <button onClick={() => onReset(activePrefix)} className="text-xs text-rose-400 hover:text-rose-300">Reset</button>
+        </div>
+      </div>
+      <div className="w-full bg-slate-800 rounded-full h-1.5 mb-3">
+        <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{width:`${progress}%`}} />
+      </div>
+      <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
+        {shopWeeks.map((w,i) => (
+          <button key={i} onClick={() => setShopTab(`w${i}`)}
+            className={`flex-shrink-0 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${shopTab===`w${i}` ? "bg-emerald-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+            {w.label}
+          </button>
+        ))}
+        <button onClick={() => setShopTab("pantry")}
+          className={`flex-shrink-0 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${isPantry ? "bg-amber-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+          🧂 Pantry
+        </button>
+      </div>
+      {isPantry && (
+        <div className="bg-amber-950/40 border border-amber-700/30 rounded-xl px-4 py-3 mb-3">
+          <p className="text-xs text-amber-300 font-bold mb-1">🧂 One-Time Pantry Stock</p>
+          <p className="text-xs text-amber-200/70">{pantryOnce.note}</p>
+        </div>
+      )}
+      <div className="space-y-2">
+        {activeSections.map((section,si) => (
+          <ShopSectionCard key={si} section={section} sKey={`${activePrefix}-${si}`} checked={checked} onToggle={onToggle} />
+        ))}
+      </div>
+      <div className="mt-4 space-y-2">
+        <div className="bg-rose-950/30 border border-rose-800/30 rounded-xl px-4 py-3">
+          <p className="text-xs text-rose-300 font-bold mb-1">⚠️ Allergy Reminders</p>
+          <ul className="text-xs text-rose-200/70 space-y-1">
+            <li>• No sesame seeds, sesame oil, tahini, or sesame-containing blends</li>
+            <li>• Check all spice mixes & sauces for hidden sesame</li>
+            <li>• Watch for sunflower and poppy seeds — related sensitivity</li>
+            <li>• Coconut/almond milk in place of dairy wherever possible</li>
+          </ul>
+        </div>
+        <div className="bg-cyan-950/30 border border-cyan-800/30 rounded-xl px-4 py-3">
+          <p className="text-xs text-cyan-300 font-bold mb-1">💧 DIY Electrolyte Water</p>
+          <p className="text-xs text-cyan-200/70">16oz water + ¼ tsp sea salt + ¼ tsp cream of tartar + ½ lemon/lime + stevia (optional). Better than Gatorade Zero for keto. 💪</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCREEN: JAR RECIPES ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function JarRecipeCard({ recipe }) {
+  const [open, setOpen] = useState(false);
+  const c = cMap[recipe.colour];
+  return (
+    <div className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+      <button onClick={() => setOpen(!open)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors text-left">
+        <span className="text-2xl">{recipe.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className={`font-bold text-sm ${c.header}`}>{recipe.name}</div>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className={`text-xs px-2 py-0.5 rounded-full border ${c.badge}`}>{recipe.type==="savoury" ? "🧂 Savoury" : "🍬 Sweet"}</span>
+            <span className="text-xs text-slate-500">{recipe.time}</span>
+            {recipe.warning && <span className="text-xs text-rose-400">⚠️ Allergy note</span>}
+          </div>
+        </div>
+        <span className={`text-slate-400 text-sm transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-5 border-t border-white/5 space-y-4 pt-4">
+          {recipe.warning && <div className="bg-rose-950/50 border border-rose-700/40 rounded-lg px-3 py-2"><p className="text-xs text-rose-300">⚠️ {recipe.tip}</p></div>}
+          <div className="grid grid-cols-4 gap-2">
+            {[{label:"Fat",val:recipe.macros.fat},{label:"Protein",val:recipe.macros.protein},{label:"Net Carbs",val:recipe.macros.carbs},{label:"Calories",val:recipe.macros.calories}].map(m => (
+              <div key={m.label} className="bg-slate-800/60 rounded-lg px-2 py-2 text-center">
+                <div className={`text-sm font-bold ${c.header}`}>{m.val}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{m.label}</div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Base — Night Before</p>
+            <div className="space-y-1.5">{recipe.base.map((b,i) => <div key={i} className="flex justify-between"><span className="text-sm text-white">{b.i}</span><span className={`text-xs font-medium ${c.header}`}>{b.a}</span></div>)}</div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Toppings — Morning Of</p>
+            <div className="space-y-1.5">{recipe.toppings.map((t,i) => <div key={i} className="flex justify-between"><span className="text-sm text-white">{t.i}</span><span className={`text-xs font-medium ${c.header}`}>{t.a}</span></div>)}</div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Method</p>
+            <div className="space-y-2">{recipe.steps.map((step,i) => (
+              <div key={i} className="flex gap-3">
+                <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white mt-0.5 ${c.check}`}>{i+1}</div>
+                <p className="text-sm text-slate-200 leading-relaxed">{step}</p>
+              </div>
+            ))}</div>
+          </div>
+          {!recipe.warning && <div className={`rounded-lg px-3 py-2 ${c.bg} border ${c.border}`}><p className="text-xs text-slate-300">💡 {recipe.tip}</p></div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function JarsScreen() {
+  const [filter, setFilter] = useState("all");
+  const filtered = jarRecipes.filter(r => filter==="all" || r.type===filter);
+  return (
+    <div>
+      <div className="flex gap-2 mb-4">
+        {["all","savoury","sweet"].map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${filter===f ? "bg-violet-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+            {f==="all" ? "All Jars" : f==="savoury" ? "🧂 Savoury" : "🍬 Sweet"}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">{filtered.map(r => <JarRecipeCard key={r.id} recipe={r} />)}</div>
+      <div className="mt-4 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3">
+        <p className="text-xs font-bold text-slate-300 mb-2">📐 Universal Base Formula</p>
+        {[["Hemp hearts","4 tbsp"],["Chia seeds","1–2 tbsp"],["Coconut flakes","2 tbsp (sweet jars)"],["Liquid (broth or milk)","¾ cup"],["Fat boost (cream/PB)","¼ cup / 1 tbsp"]].map(([i,a]) => (
+          <div key={i} className="flex justify-between text-xs py-0.5"><span className="text-slate-300">{i}</span><span className="text-emerald-400 font-medium">{a}</span></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCREEN: SUNDAY PREP ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function PrepSectionCard({ section, sIdx, checked, onToggle }) {
+  const [open, setOpen] = useState(true);
+  const c = cMap[section.colour];
+  const done = section.tasks.filter((_,i) => checked[`prep-${sIdx}-${i}`]).length;
+  return (
+    <div className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+      <button onClick={() => setOpen(!open)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`font-bold text-sm ${c.header}`}>{section.title}</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full border ${c.badge}`}>{done}/{section.tasks.length}</span>
+          <span className="text-xs text-slate-500">~{section.time}</span>
+        </div>
+        <span className={`text-slate-400 text-sm transition-transform flex-shrink-0 ml-2 ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-3 border-t border-white/5 pt-2 space-y-1">
+          {section.tasks.map((task,i) => (
+            <CheckItem key={i} label={task.task} detail={task.detail}
+              checked={!!checked[`prep-${sIdx}-${i}`]}
+              onToggle={() => onToggle(`prep-${sIdx}-${i}`)}
+              colorKey={section.colour} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PrepScreen({ checked, onToggle, onReset }) {
+  const total = prepSections.reduce((a,s) => a+s.tasks.length, 0);
+  const done = Object.keys(checked).filter(k => k.startsWith("prep-") && checked[k]).length;
+  const progress = Math.round((done/total)*100);
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="text-2xl font-bold text-emerald-400">{progress}%</div>
+          <div className="text-xs text-slate-400">{done}/{total} tasks</div>
+        </div>
+        <button onClick={() => onReset("prep")} className="text-xs text-rose-400 hover:text-rose-300">Reset</button>
+      </div>
+      <div className="w-full bg-slate-800 rounded-full h-1.5 mb-4">
+        <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{width:`${progress}%`}} />
+      </div>
+      <div className="bg-amber-950/40 border border-amber-700/30 rounded-xl px-4 py-3 mb-3">
+        <p className="text-xs text-amber-300 font-bold mb-1">🕐 Total Time: ~90 minutes</p>
+        <p className="text-xs text-amber-200/70">Most of this runs simultaneously — bacon in oven while chicken grills while you assemble jars.</p>
+      </div>
+      <div className="space-y-2">
+        {prepSections.map((section,si) => (
+          <PrepSectionCard key={si} section={section} sIdx={si} checked={checked} onToggle={onToggle} />
+        ))}
+      </div>
+      <div className="mt-4 bg-emerald-950/30 border border-emerald-800/30 rounded-xl px-4 py-3">
+        <p className="text-xs text-emerald-300 font-bold mb-1">🏆 When You're Done</p>
+        <p className="text-xs text-emerald-200/70">One focused Sunday sets you up for a full week of zero-stress mornings, great lunches and fast dinners. That's the whole game. 💪</p>
+      </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCREEN: CUPBOARD ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function CupboardScreen({ stock, onToggleStock }) {
+  const [activeTab, setActiveTab] = useState("stock");
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [openCats, setOpenCats] = useState({ proteins: true });
+  const stockList = Object.keys(stock).filter(k => stock[k]);
+  const planMatches = matchMealsToStock(stockList);
+  const toggleCat = (id) => setOpenCats(p => ({ ...p, [id]: !p[id] }));
+
+  const getAiSuggestions = async () => {
+    if (!stockList.length) return;
+    setAiLoading(true); setAiSuggestion("");
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6", max_tokens: 1000,
+          messages: [{ role: "user", content: `You are a professional keto chef. The user has these ingredients: ${stockList.join(", ")}.\n\nDietary rules (STRICT):\n- Keto — no grains, no sugar, low carb\n- Lactose intolerant — no regular dairy (coconut/almond OK, aged hard cheese OK)\n- NO sesame, sunflower seeds, or poppy seeds\n- Permitted seeds: hemp hearts, chia seeds, coconut flakes\n\nSuggest 3 quick keto meals (under 20 min) they can make RIGHT NOW. Format as:\n\n🍳 BREAKFAST: [name] — [one line]\n🥗 LUNCH: [name] — [one line]\n🍽️ DINNER: [name] — [one line]\n\nBe a chef — make it sound delicious.` }]
+        })
       });
-      var mealTabs=["all","breakfast","lunch","dinner","snack"];
-      return h("div",null,
-        h("div",{className:"relative",style:{marginBottom:"16px"}},h("span",{style:{position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",color:"var(--dim)"}},icon(ISearch,16)),h("input",{className:"search",value:search,onChange:function(e){setSearch(e.target.value);},placeholder:"Search the cookbook...",style:{paddingLeft:"36px"}})),
-        h("div",{className:"flex flex-wrap",style:{gap:"8px",marginBottom:"12px"}},mealTabs.map(function(mm){var active=mealFilter===mm;return h("button",{key:mm,onClick:function(){setMealFilter(mm);},className:"oswald uppercase",style:active?{fontSize:"12px",fontWeight:600,letterSpacing:"0.05em",padding:"6px 12px",borderRadius:"9999px",backgroundColor:mm==="all"?"#fb7a3c":MEAL_META[mm].color,color:"#0b1120"}:{fontSize:"12px",fontWeight:600,letterSpacing:"0.05em",padding:"6px 12px",borderRadius:"9999px",backgroundColor:"var(--card)",color:"var(--muted)"}},mm==="all"?"All":MEAL_META[mm].label);})),
-        h("div",{className:"flex flex-wrap",style:{gap:"8px",marginBottom:"12px"}},FLAVORS.map(function(f){var on=flavorFilters[f];return h("button",{key:f,onClick:function(){toggleObj(setFlavorFilters,flavorFilters,f);},className:"pill capitalize",style:on?{borderColor:"#fb7a3c",color:"#fb7a3c"}:{}},f);})),
-        h("div",{className:"flex flex-wrap",style:{gap:"8px",marginBottom:"24px"}},[["quick","<=15 min"],["grabGo","grab & go"],["thermos","thermos"],["sundayPrep","Sunday prep"]].map(function(q){var on=quick[q[0]];return h("button",{key:q[0],onClick:function(){toggleObj(setQuick,quick,q[0]);},className:"pill",style:on?{borderColor:"#2dd4bf",color:"#2dd4bf"}:{}},q[1]);})),
-        filtered.length===0?h("p",{className:"text-center",style:{fontSize:"14px",padding:"48px 0",color:"var(--dim)"}},"Nothing on the line matches that."):h("div",{className:"grid-recipes"},filtered.map(function(r){return h(RecipeCard,{key:r.id,recipe:r,onOpen:props.onOpen});}))
-      );
-    }
+      const data = await response.json();
+      setAiSuggestion(data.content?.find(b => b.type==="text")?.text || "No suggestions available.");
+    } catch { setAiSuggestion("Could not load suggestions — check your connection."); }
+    setAiLoading(false);
+  };
 
-    function CookTonightTab(props){
-      var s1=useState(true),pantryOpen=s1[0],setPantryOpen=s1[1];
-      var have=props.haveIngredients;
-      var ranked=RECIPES.map(function(r){var total=r.ingredients.length;var hc=0;var missing=[];r.ingredients.forEach(function(i){if(have[i.name])hc++;else missing.push(i);});return Object.assign({},r,{pct:total?Math.round(hc/total*100):0,haveCount:hc,total:total,missing:missing});}).sort(function(a,b){return b.pct-a.pct||a.time-b.time;});
-      var ready=ranked.filter(function(r){return r.pct>=80;}),almost=ranked.filter(function(r){return r.pct>=50&&r.pct<80;}),trip=ranked.filter(function(r){return r.pct<50;});
-      var grouped=CATEGORY_ORDER.map(function(cat){return{cat:cat,items:ALL_INGREDIENT_NAMES.filter(function(n){return(CATEGORY_MAP[n]||"Pantry & Spice")===cat;})};});
-      var sections=[["Ready now",ready,"#fb7a3c"],["Almost there",almost,"#f5b942"],["Need a grocery run",trip,"#64748b"]];
-      return h("div",{style:{display:"flex",flexDirection:"column",gap:"24px"}},
-        h("div",{className:"card"},
-          h("button",{onClick:function(){setPantryOpen(!pantryOpen);},className:"w-full flex items-center justify-between",style:{padding:"12px 16px"}},h("span",{className:"flex items-center",style:{gap:"8px",fontSize:"14px",fontWeight:600,color:"#f1f5f9"}},icon(IPack,16,"#fb7a3c")," What's in the kitchen right now"),pantryOpen?icon(IUp,16,"#4b5876"):icon(IDown,16,"#4b5876")),
-          pantryOpen?h("div",{className:"pantry-grid",style:{padding:"0 16px 16px"}},grouped.map(function(g){return h("div",{key:g.cat},h("h5",{className:"uppercase",style:{fontSize:"10px",letterSpacing:"0.1em",marginBottom:"8px",color:"var(--dim)"}},g.cat),h("div",{className:"flex flex-wrap",style:{gap:"6px"}},g.items.map(function(name){var on=have[name];return h("button",{key:name,onClick:function(){props.togglePantryItem(name);},className:"pill capitalize",style:on?{backgroundColor:"#fb7a3c1f",borderColor:"#fb7a3c",color:"#fb7a3c"}:{}},name);})));})):null
-        ),
-        sections.map(function(sec){var title=sec[0],list=sec[1],color=sec[2];return h("div",{key:title},
-          h("h4",{className:"uppercase flex items-center",style:{fontSize:"12px",letterSpacing:"0.1em",marginBottom:"8px",gap:"8px",color:color}},icon(IFlame,13,color)," "+title+" ",h("span",{className:"mono",style:{color:"var(--dim)"}},"("+list.length+")")),
-          list.length===0?h("p",{style:{fontSize:"12px",marginBottom:"16px",color:"var(--dim)"}},"Nothing here yet."):h("div",{style:{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"16px"}},list.map(function(r){return h("button",{key:r.id,onClick:function(){props.onOpen(r.id);},className:"w-full",style:{textAlign:"left",borderRadius:"8px",padding:"12px",backgroundColor:"var(--card)",borderLeft:"3px solid "+MEAL_META[r.meal].color}},h("div",{className:"flex items-center justify-between",style:{marginBottom:"8px",gap:"12px"}},h("span",{style:{fontSize:"14px",fontWeight:600,color:"#f1f5f9"}},r.name),h("span",{className:"mono shrink-0",style:{fontSize:"12px",color:"var(--dim)"}},r.haveCount+"/"+r.total)),h(FlameGauge,{pct:r.pct}),(r.missing.length>0&&r.missing.length<=4)?h("p",{style:{marginTop:"8px",fontSize:"12px",color:"var(--dim)"}},"missing: "+r.missing.map(function(mm){return mm.name;}).join(", ")):null);}))
-        );})
-      );
-    }
+  return (
+    <div>
+      <div className="flex gap-1.5 mb-4">
+        {[{id:"stock",label:"📦 My Stock"},{id:"suggest",label:"💡 Meal Ideas"}].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab===t.id ? "bg-violet-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-    function PlannerTab(props){
-      var mealPlan=props.mealPlan;
-      var filled=0;DAYS.forEach(function(d){MEALS.forEach(function(m){if(mealPlan[d]&&mealPlan[d][m])filled++;});});
-      return h("div",null,
-        h("div",{className:"flex items-center justify-between",style:{marginBottom:"16px"}},h("span",{style:{fontSize:"14px",color:"var(--muted)"}},h("span",{className:"mono",style:{color:"#f1f5f9"}},filled)," / "+(DAYS.length*MEALS.length)+" meals planned"),h("button",{onClick:props.clearWeek,className:"pill flex items-center",style:{gap:"6px"}},icon(ITrash,12)," Clear week")),
-        h("div",{className:"overflow-x-auto"},
-          h("div",{className:"grid",style:{gap:"8px",gridTemplateColumns:"90px repeat("+DAYS.length+",minmax(120px,1fr))",minWidth:"780px"}},
-            [h("div",{key:"corner"})].concat(DAYS.map(function(d){return h("div",{key:d,className:"text-center"},h("div",{className:"uppercase",style:{fontSize:"12px",fontWeight:600,letterSpacing:"0.05em",color:"#e2e8f0"}},d),DAY_NOTE[d]?h("div",{style:{fontSize:"10px",color:"#fb7a3c"}},DAY_NOTE[d]):null);})).concat(
-            MEALS.map(function(meal){return [h("div",{key:meal+"-label",className:"flex items-center uppercase",style:{fontSize:"12px",fontWeight:600,letterSpacing:"0.05em",color:MEAL_META[meal].color}},MEAL_META[meal].label)].concat(DAYS.map(function(day){var rid=mealPlan[day]&&mealPlan[day][meal];var recipe=rid?RECIPES.filter(function(x){return x.id===rid;})[0]:null;return h("div",{key:day+meal,className:"card flex flex-col justify-center",style:{padding:"8px",minHeight:"64px"}},recipe?h("div",null,h("p",{style:{fontSize:"12px",lineHeight:1.3,color:"#f1f5f9",marginBottom:"4px"}},recipe.name),h("button",{onClick:function(){props.removeRecipe(day,meal);},className:"flex items-center",style:{fontSize:"10px",gap:"4px",color:"var(--dim)"}},icon(IX,10)," remove")):h("button",{onClick:function(){props.onOpenPicker(day,meal);},className:"w-full h-full flex items-center justify-center",style:{borderRadius:"4px",border:"1px dashed var(--line2)",padding:"12px",color:"var(--dim2)"}},icon(IPlus,14)));}));}).reduce(function(a,b){return a.concat(b);},[]))
-          )
-        )
-      );
-    }
+      {activeTab === "stock" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-slate-400">{stockList.length} items in stock</p>
+            {stockList.length > 0 && <button onClick={() => stockList.forEach(k => onToggleStock(k))} className="text-xs text-rose-400 hover:text-rose-300">Clear all</button>}
+          </div>
+          {stockList.length > 0 && (
+            <div className="bg-emerald-950/30 border border-emerald-700/30 rounded-xl px-3 py-2 mb-2">
+              <p className="text-xs text-emerald-300 font-bold mb-1">✅ {stockList.length} items stocked</p>
+              <div className="flex flex-wrap gap-1">
+                {stockList.map(item => <span key={item} className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">{item}</span>)}
+              </div>
+            </div>
+          )}
+          {cupboardCategories.map(cat => {
+            const c = cMap[cat.color] || cMap.slate;
+            const isOpen = openCats[cat.id];
+            const catCount = cat.items.filter(item => stock[item]).length;
+            return (
+              <div key={cat.id} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+                <button onClick={() => toggleCat(cat.id)} className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold text-sm ${c.header}`}>{cat.label}</span>
+                    {catCount > 0 && <span className={`text-xs px-2 py-0.5 rounded-full ${c.badge}`}>{catCount} in stock</span>}
+                  </div>
+                  <span className={`text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-3 border-t border-white/5 pt-2">
+                    <div className="grid grid-cols-2 gap-1">
+                      {cat.items.map(item => {
+                        const has = !!stock[item];
+                        return (
+                          <button key={item} onClick={() => onToggleStock(item)}
+                            className={`flex items-center gap-2 py-1.5 px-2 rounded-lg text-left text-xs transition-all hover:bg-white/5 ${has ? "opacity-100" : "opacity-60"}`}>
+                            <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${has ? `${c.dot} border-transparent` : "border-slate-600"}`}>
+                              {has && <span className="text-white text-xs font-bold">✓</span>}
+                            </div>
+                            <span className={has ? "text-white font-medium" : "text-slate-400"}>{item}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl px-4 py-3 mt-2">
+            <p className="text-xs text-slate-400">💡 Stock you tick here also powers the Walk-In Cookbook's Cook Tonight tab — it'll rank what you can make right now.</p>
+          </div>
+        </div>
+      )}
 
-    function PlannerPicker(props){
-      var s1=useState(""),search=s1[0],setSearch=s1[1];
-      var s2=useState(props.meal),filterMeal=s2[0],setFilterMeal=s2[1];
-      var list=RECIPES.filter(function(r){return(filterMeal==="all"||r.meal===filterMeal)&&r.name.toLowerCase().indexOf(search.toLowerCase())!==-1;});
-      var mealTabs=["all","breakfast","lunch","dinner","snack"];
-      return h("div",{className:"fixed flex items-center justify-center",style:{inset:0,zIndex:50,padding:"16px"}},
-        h("div",{className:"modal-overlay",onClick:props.onClose}),
-        h("div",{className:"flex flex-col",style:{position:"relative",width:"100%",maxWidth:"512px",maxHeight:"80vh",borderRadius:"8px",backgroundColor:"var(--panel)"}},
-          h("div",{className:"flex items-center justify-between",style:{padding:"16px 20px",borderBottom:"1px solid var(--line)"}},h("h3",{style:{color:"#f1f5f9",fontWeight:600}},"Add to "+props.day+" - "+MEAL_META[props.meal].label),h("button",{onClick:props.onClose},icon(IX,18,"#8694ab"))),
-          h("div",{style:{padding:"16px 20px 0"}},h("input",{className:"search",value:search,onChange:function(e){setSearch(e.target.value);},placeholder:"Search recipes...",style:{marginBottom:"12px"}}),h("div",{className:"flex flex-wrap",style:{gap:"8px",marginBottom:"12px"}},mealTabs.map(function(mm){var active=filterMeal===mm;return h("button",{key:mm,onClick:function(){setFilterMeal(mm);},className:"pill",style:active?{backgroundColor:"#fb7a3c",color:"#0b1120",borderColor:"#fb7a3c"}:{}},mm==="all"?"All":MEAL_META[mm].label);}))),
-          h("div",{className:"overflow-y-auto",style:{padding:"0 20px 20px",display:"flex",flexDirection:"column",gap:"8px"}},list.map(function(r){return h("button",{key:r.id,onClick:function(){props.onPick(r.id);},className:"w-full flex items-center justify-between",style:{textAlign:"left",borderRadius:"8px",padding:"12px",backgroundColor:"var(--card)",borderLeft:"3px solid "+MEAL_META[r.meal].color}},h("div",null,h("p",{style:{fontSize:"14px",color:"#f1f5f9"}},r.name),h("p",{style:{fontSize:"12px",color:"var(--dim)"}},r.time+" min")),icon(IPlus,15,"#4b5876"));}),list.length===0?h("p",{className:"text-center",style:{fontSize:"14px",padding:"32px 0",color:"var(--dim)"}},"No matches."):null)
-        )
-      );
-    }
+      {activeTab === "suggest" && (
+        <div className="space-y-3">
+          {stockList.length === 0 ? (
+            <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl px-4 py-6 text-center">
+              <p className="text-sm text-slate-400 mb-1">No items in stock yet</p>
+              <p className="text-xs text-slate-500">Go to 📦 My Stock and tick what you have.</p>
+            </div>
+          ) : (
+            <>
+              {planMatches.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-400 mb-2">📋 From Your Meal Plan</p>
+                  <div className="space-y-1.5">
+                    {planMatches.map((m, i) => (
+                      <div key={i} className="bg-emerald-950/30 border border-emerald-700/30 rounded-xl px-3 py-2.5 flex items-start gap-3">
+                        <span className="text-xl flex-shrink-0">{m.emoji}</span>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-emerald-400">{m.type}</span>
+                            <span className="text-xs text-slate-500">{m.week} · {m.day}</span>
+                          </div>
+                          <p className="text-sm text-white mt-0.5 leading-snug">{m.meal}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-violet-400">🤖 AI Chef Suggestions</p>
+                  <span className="text-xs text-slate-500">{stockList.length} items</span>
+                </div>
+                {!aiSuggestion && !aiLoading && (
+                  <div className="bg-violet-950/30 border border-violet-700/30 rounded-xl px-4 py-4 text-center">
+                    <p className="text-sm text-slate-300 mb-3">Get keto meal ideas based on exactly what you have right now</p>
+                    <button onClick={getAiSuggestions} className="bg-violet-500 hover:bg-violet-400 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-all">✨ Suggest Meals From My Stock</button>
+                  </div>
+                )}
+                {aiLoading && (
+                  <div className="bg-violet-950/30 border border-violet-700/30 rounded-xl px-4 py-6 text-center">
+                    <div className="text-2xl mb-2 animate-pulse">🍳</div>
+                    <p className="text-sm text-violet-300">Chef is thinking...</p>
+                  </div>
+                )}
+                {aiSuggestion && !aiLoading && (
+                  <div className="bg-violet-950/30 border border-violet-700/30 rounded-xl px-4 py-4 space-y-3">
+                    {aiSuggestion.split("\n").filter(l => l.trim()).map((line, i) => (
+                      <p key={i} className="text-sm text-slate-200 leading-relaxed">{line}</p>
+                    ))}
+                    <button onClick={getAiSuggestions} className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2 rounded-lg transition-all">🔄 Refresh</button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
-    function ShoppingTab(props){
-      var s1=useState(false),showStocked=s1[0],setShowStocked=s1[1];
-      var mealPlan=props.mealPlan,have=props.haveIngredients,bought=props.boughtItems;
-      var planned=[];DAYS.forEach(function(day){MEALS.forEach(function(meal){var id=mealPlan[day]&&mealPlan[day][meal];if(id){var r=RECIPES.filter(function(x){return x.id===id;})[0];if(r)planned.push(r);}});});
-      var neededMap={};planned.forEach(function(r){r.ingredients.forEach(function(i){if(have[i.name])return;if(!neededMap[i.name])neededMap[i.name]={name:i.name,labels:{},category:CATEGORY_MAP[i.name]||"Pantry & Spice"};neededMap[i.name].labels[i.label]=1;});});
-      var needed=Object.keys(neededMap).map(function(k){return neededMap[k];});
-      var stockedMap={};planned.forEach(function(r){r.ingredients.forEach(function(i){if(have[i.name])stockedMap[i.name]=1;});});
-      var stocked=Object.keys(stockedMap);
-      if(planned.length===0)return h("div",{className:"text-center",style:{padding:"64px 0"}},h("div",{className:"flex justify-center",style:{marginBottom:"12px"}},icon(ICart,28,"#2a3650")),h("p",{style:{fontSize:"14px",marginBottom:"16px",color:"var(--dim)"}},"Plan some meals first and the list builds itself."),h("button",{onClick:props.onGoToPlanner,style:{fontSize:"12px",padding:"8px 16px",borderRadius:"9999px",fontWeight:600,backgroundColor:"#fb7a3c",color:"#0b1120"}},"Go to Planner"));
-      return h("div",null,
-        h("p",{style:{fontSize:"14px",marginBottom:"20px",color:"var(--muted)"}},h("span",{className:"mono",style:{color:"#f1f5f9"}},needed.length)," items to buy for ",h("span",{className:"mono",style:{color:"#f1f5f9"}},planned.length)," planned meals"),
-        CATEGORY_ORDER.map(function(cat){var items=needed.filter(function(i){return i.category===cat;});if(items.length===0)return null;return h("div",{key:cat,style:{marginBottom:"20px"}},h("h4",{className:"uppercase",style:{fontSize:"12px",letterSpacing:"0.1em",marginBottom:"8px",color:"var(--dim)"}},cat),h("div",{style:{display:"flex",flexDirection:"column",gap:"6px"}},items.map(function(item){var checked=bought[item.name];return h("button",{key:item.name,onClick:function(){props.toggleBought(item.name);},className:"w-full flex items-center",style:{gap:"12px",borderRadius:"8px",padding:"10px 12px",textAlign:"left",backgroundColor:"var(--card)"}},h("span",{className:"flex items-center justify-center shrink-0",style:{width:"16px",height:"16px",borderRadius:"3px",backgroundColor:checked?"#2dd4bf":"transparent",border:"1px solid "+(checked?"#2dd4bf":"var(--dim2)")}},checked?icon(ICheck,11,"#0b1120"):null),h("span",{className:"capitalize",style:{fontSize:"14px",color:checked?"var(--dim)":"var(--text)",textDecoration:checked?"line-through":"none"}},item.name," ",h("span",{style:{color:"var(--dim)"}},"- "+Object.keys(item.labels).join(" + "))));})));}),
-        stocked.length>0?h("div",{style:{marginTop:"24px"}},h("button",{onClick:function(){setShowStocked(!showStocked);},className:"flex items-center uppercase",style:{gap:"8px",fontSize:"12px",letterSpacing:"0.1em",marginBottom:"8px",color:"var(--dim)"}},showStocked?icon(IUp,13):icon(IDown,13)," Already in the kitchen ("+stocked.length+")"),showStocked?h("div",{className:"flex flex-wrap",style:{gap:"6px"}},stocked.map(function(n){return h("span",{key:n,className:"capitalize",style:{fontSize:"12px",padding:"4px 10px",borderRadius:"9999px",backgroundColor:"var(--card)",color:"var(--dim)"}},n);})):null):null
-      );
-    }
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCREEN: WALK-IN COOKBOOK ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function CbMealTag({ meal }) {
+  const m = MEAL_META[meal];
+  return (
+    <span className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-sm" style={{ color: m.color, backgroundColor: m.color + "22" }}>{m.label}</span>
+  );
+}
 
-    var TABS=[{key:"cookbook",label:"Cookbook",ic:IBook},{key:"tonight",label:"Cook Tonight",ic:IFlame},{key:"planner",label:"Planner",ic:ICal},{key:"shopping",label:"Shopping",ic:ICart}];
+function CbMacros({ macros }) {
+  return (
+    <div className="flex gap-3 text-xs" style={{ color: "#8694ab" }}>
+      <span><span className="text-slate-200">{macros.cal}</span> cal</span>
+      <span><span className="text-slate-200">{macros.fat}g</span> fat</span>
+      <span><span className="text-slate-200">{macros.protein}g</span> pro</span>
+      <span><span className="text-slate-200">{macros.netCarb}g</span> net c</span>
+    </div>
+  );
+}
 
-    function App(){
-      var s1=useState("cookbook"),tab=s1[0],setTab=s1[1];
-      var s2=useState({}),have=s2[0],setHave=s2[1];
-      var s3=useState(emptyPlan()),mealPlan=s3[0],setMealPlan=s3[1];
-      var s4=useState({}),bought=s4[0],setBought=s4[1];
-      var s5=useState(null),selectedId=s5[0],setSelectedId=s5[1];
-      var s6=useState(null),picker=s6[0],setPicker=s6[1];
+function CbRecipeDetail({ recipe, haveIngredients, onToggleIngredient, onClose }) {
+  const m = MEAL_META[recipe.meal];
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative w-full max-w-md h-full overflow-y-auto bg-slate-950">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-slate-950 border-b border-slate-800">
+          <CbMealTag meal={recipe.meal} />
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button>
+        </div>
+        <div className="px-5 pt-5 pb-8">
+          <span className="text-xs text-slate-600 font-mono">TICKET № {recipe.id.toUpperCase()}</span>
+          <h2 className="mt-1 mb-3 text-2xl font-bold text-white leading-snug">{recipe.name}</h2>
+          <div className="flex items-center gap-4 text-sm text-slate-400 mb-4">
+            <span>⏱ {recipe.time} min</span>
+            {recipe.flavor.map(f => <span key={f} className="capitalize">{f}</span>)}
+            {recipe.grabGo && <span>grab & go</span>}
+            {recipe.thermos && <span>thermos</span>}
+          </div>
+          <div className="rounded-lg p-3 mb-6 bg-slate-900">
+            <CbMacros macros={recipe.macros} />
+          </div>
+          <h4 className="text-xs uppercase tracking-widest text-slate-600 mb-3">Ingredients</h4>
+          <ul className="mb-6 space-y-2">
+            {recipe.ingredients.map(i => {
+              const have = haveIngredients.has(i.name);
+              return (
+                <li key={i.name}>
+                  <button onClick={() => onToggleIngredient(i.name)} className="w-full flex items-center gap-3 text-left">
+                    <span className="w-4 h-4 rounded-sm flex items-center justify-center shrink-0 border" style={{ backgroundColor: have ? m.color : "transparent", borderColor: have ? m.color : "#3a4863" }}>
+                      {have && <span className="text-black text-xs font-bold">✓</span>}
+                    </span>
+                    <span className="text-sm" style={{ color: have ? "#e8edf5" : "#8694ab" }}>{i.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <h4 className="text-xs uppercase tracking-widest text-slate-600 mb-3">Method</h4>
+          <ol className="space-y-3">
+            {recipe.steps.map((s, idx) => (
+              <li key={idx} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
+                <span className="font-mono shrink-0 font-bold" style={{ color: m.color }}>{String(idx+1).padStart(2,"0")}</span>
+                {s}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      useEffect(function(){
-        try{
-          var p=storage.get("walkin-pantry");if(p){var arr=JSON.parse(p.value);var o={};arr.forEach(function(n){o[n]=1;});setHave(o);}
-          var pl=storage.get("walkin-mealplan");if(pl)setMealPlan(JSON.parse(pl.value));
-          var b=storage.get("walkin-bought");if(b){var arr2=JSON.parse(b.value);var o2={};arr2.forEach(function(n){o2[n]=1;});setBought(o2);}
-        }catch(e){}
-      },[]);
+function CbRecipeCard({ recipe, onOpen }) {
+  const m = MEAL_META[recipe.meal];
+  return (
+    <button onClick={() => onOpen(recipe.id)} className="text-left rounded-xl overflow-hidden w-full transition-colors bg-slate-900/80 border border-slate-800 hover:border-slate-700" style={{ borderLeft: `3px solid ${m.color}` }}>
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <CbMealTag meal={recipe.meal} />
+          <span className="text-xs text-slate-600 font-mono">⏱ {recipe.time}m</span>
+        </div>
+        <h3 className="font-bold text-white leading-snug mb-2 text-sm">{recipe.name}</h3>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {recipe.flavor.map(f => <span key={f} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 capitalize">{f}</span>)}
+          {recipe.grabGo && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-teal-400">grab & go</span>}
+          {recipe.thermos && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-sky-400">thermos</span>}
+        </div>
+        <CbMacros macros={recipe.macros} />
+      </div>
+    </button>
+  );
+}
 
-      function togglePantryItem(name){setHave(function(prev){var n={};for(var k in prev)n[k]=prev[k];if(n[name])delete n[name];else n[name]=1;storage.set("walkin-pantry",JSON.stringify(Object.keys(n)));return n;});}
-      function assignRecipe(day,meal,rid){setMealPlan(function(prev){var n={};for(var k in prev)n[k]=prev[k];n[day]=Object.assign({},prev[day]);n[day][meal]=rid;storage.set("walkin-mealplan",JSON.stringify(n));return n;});setPicker(null);}
-      function removeRecipe(day,meal){setMealPlan(function(prev){var n={};for(var k in prev)n[k]=prev[k];n[day]=Object.assign({},prev[day]);n[day][meal]=null;storage.set("walkin-mealplan",JSON.stringify(n));return n;});}
-      function clearWeek(){var n=emptyPlan();setMealPlan(n);storage.set("walkin-mealplan",JSON.stringify(n));}
-      function toggleBought(name){setBought(function(prev){var n={};for(var k in prev)n[k]=prev[k];if(n[name])delete n[name];else n[name]=1;storage.set("walkin-bought",JSON.stringify(Object.keys(n)));return n;});}
+function CookbookBrowseTab({ haveIngredients, onOpen }) {
+  const [search, setSearch] = useState("");
+  const [mealFilter, setMealFilter] = useState("all");
+  const [flavorFilters, setFlavorFilters] = useState(new Set());
+  const [quickFilters, setQuickFilters] = useState(new Set());
+  const toggle = (setter, val) => setter(prev => { const n = new Set(prev); n.has(val) ? n.delete(val) : n.add(val); return n; });
 
-      var selectedRecipe=selectedId?RECIPES.filter(function(r){return r.id===selectedId;})[0]:null;
+  const filtered = useMemo(() => COOKBOOK.filter(r => {
+    if (mealFilter !== "all" && r.meal !== mealFilter) return false;
+    if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (flavorFilters.size && !r.flavor.some(f => flavorFilters.has(f))) return false;
+    if (quickFilters.has("quick") && r.time > 15) return false;
+    if (quickFilters.has("grabGo") && !r.grabGo) return false;
+    if (quickFilters.has("thermos") && !r.thermos) return false;
+    if (quickFilters.has("sundayPrep") && !r.sundayPrep) return false;
+    return true;
+  }), [search, mealFilter, flavorFilters, quickFilters]);
 
-      return h("div",{className:"min-h-screen",style:{paddingBottom:"64px",backgroundColor:"var(--bg)"}},
-        h("header",{style:{padding:"32px 20px 20px",borderBottom:"1px solid var(--card)"}},h("h1",{className:"oswald",style:{color:"#f1f5f9",letterSpacing:"-0.02em",fontSize:"28px",fontWeight:700}},"THE WALK-IN"),h("p",{style:{fontSize:"14px",marginTop:"4px",color:"var(--dim)"}},"Keto, flavor-first, built for a 15km day. No lactose, no sesame or related seeds.")),
-        h("nav",{className:"sticky flex overflow-x-auto",style:{top:0,zIndex:20,padding:"0 20px",gap:"4px",backgroundColor:"var(--bg)",borderBottom:"1px solid var(--card)"}},TABS.map(function(t){var active=tab===t.key;return h("button",{key:t.key,onClick:function(){setTab(t.key);},className:"tab-btn"+(active?" active":"")},icon(t.ic,15)," "+t.label);})),
-        h("main",{style:{padding:"20px 20px 0",maxWidth:"1024px",margin:"0 auto"}},
-          tab==="cookbook"?h(CookbookTab,{onOpen:setSelectedId}):null,
-          tab==="tonight"?h(CookTonightTab,{haveIngredients:have,togglePantryItem:togglePantryItem,onOpen:setSelectedId}):null,
-          tab==="planner"?h(PlannerTab,{mealPlan:mealPlan,assignRecipe:assignRecipe,removeRecipe:removeRecipe,clearWeek:clearWeek,onOpenPicker:function(day,meal){setPicker({day:day,meal:meal});}}):null,
-          tab==="shopping"?h(ShoppingTab,{mealPlan:mealPlan,haveIngredients:have,boughtItems:bought,toggleBought:toggleBought,onGoToPlanner:function(){setTab("planner");}}):null
-        ),
-        selectedRecipe?h(RecipeDetail,{recipe:selectedRecipe,haveIngredients:have,togglePantryItem:togglePantryItem,onAssign:assignRecipe,onClose:function(){setSelectedId(null);}}):null,
-        picker?h(PlannerPicker,{day:picker.day,meal:picker.meal,onPick:function(rid){assignRecipe(picker.day,picker.meal,rid);},onClose:function(){setPicker(null);}}):null
-      );
-    }
+  return (
+    <div>
+      <div className="relative mb-4">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the cookbook…"
+          className="w-full rounded-lg pl-9 pr-3 py-2.5 text-sm bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-slate-600" />
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {["all","breakfast","lunch","dinner","snack"].map(mm => (
+          <button key={mm} onClick={() => setMealFilter(mm)}
+            className="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full transition-all"
+            style={mealFilter===mm ? { backgroundColor: mm==="all" ? "#fb7a3c" : MEAL_META[mm]?.color || "#fb7a3c", color: "#0b1120" } : { backgroundColor: "#1e293b", color: "#8694ab" }}>
+            {mm==="all" ? "All" : MEAL_META[mm].label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {CB_FLAVORS.map(f => (
+          <button key={f} onClick={() => toggle(setFlavorFilters, f)}
+            className="text-xs capitalize px-2.5 py-1 rounded-full border transition-all"
+            style={flavorFilters.has(f) ? { borderColor:"#fb7a3c", color:"#fb7a3c" } : { borderColor:"#2a3650", color:"#8694ab" }}>
+            {f}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-5">
+        {[["quick","≤15 min"],["grabGo","grab & go"],["thermos","thermos"],["sundayPrep","Sunday prep"]].map(([key, label]) => (
+          <button key={key} onClick={() => toggle(setQuickFilters, key)}
+            className="text-xs px-2.5 py-1 rounded-full border transition-all"
+            style={quickFilters.has(key) ? { borderColor:"#2dd4bf", color:"#2dd4bf" } : { borderColor:"#2a3650", color:"#8694ab" }}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-sm text-center py-12 text-slate-600">No matches — clear a filter.</p>
+      ) : (
+        <div className="space-y-2">{filtered.map(r => <CbRecipeCard key={r.id} recipe={r} onOpen={onOpen} />)}</div>
+      )}
+    </div>
+  );
+}
 
-    ReactDOM.createRoot(document.getElementById("root")).render(h(App));
-  })();
-  </script>
-  <script>
-    if('serviceWorker' in navigator){
-      window.addEventListener('load',function(){
-        navigator.serviceWorker.register('./service-worker.js').catch(function(err){console.error('SW failed:',err);});
-      });
-    }
-  </script>
-</body>
-</html>
+function CookTonightTab({ haveIngredients, onToggleIngredient, onOpen }) {
+  const [pantryOpen, setPantryOpen] = useState(true);
+  const grouped = CB_CAT_ORDER.map(cat => ({ cat, items: ALL_CB_INGREDIENTS.filter(n => (CB_CAT_MAP[n] || "Pantry & Spice") === cat) }));
+
+  const ranked = useMemo(() => COOKBOOK.map(r => {
+    const total = r.ingredients.length;
+    const haveCount = r.ingredients.filter(i => haveIngredients.has(i.name)).length;
+    const pct = total ? Math.round((haveCount/total)*100) : 0;
+    const missing = r.ingredients.filter(i => !haveIngredients.has(i.name));
+    return { ...r, pct, haveCount, total, missing };
+  }).sort((a,b) => b.pct - a.pct || a.time - b.time), [haveIngredients]);
+
+  const ready = ranked.filter(r => r.pct >= 80);
+  const almost = ranked.filter(r => r.pct >= 50 && r.pct < 80);
+  const trip = ranked.filter(r => r.pct < 50);
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl bg-slate-900 border border-slate-800">
+        <button onClick={() => setPantryOpen(v => !v)} className="w-full flex items-center justify-between px-4 py-3">
+          <span className="flex items-center gap-2 text-sm font-semibold text-white">🎒 What's in the kitchen right now</span>
+          <span className="text-slate-500 text-sm">{pantryOpen ? "▴" : "▾"}</span>
+        </button>
+        {pantryOpen && (
+          <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 border-t border-slate-800 pt-3">
+            {grouped.map(({ cat, items }) => (
+              <div key={cat}>
+                <h5 className="text-[10px] uppercase tracking-widest mb-2 text-slate-600">{cat}</h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {items.map(name => {
+                    const have = haveIngredients.has(name);
+                    return (
+                      <button key={name} onClick={() => onToggleIngredient(name)}
+                        className="text-xs capitalize px-2 py-1 rounded-full border transition-all"
+                        style={have ? { backgroundColor:"#fb7a3c22", borderColor:"#fb7a3c", color:"#fb7a3c" } : { borderColor:"#2a3650", color:"#8694ab" }}>
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {[["🔥 Ready now", ready, "#fb7a3c"], ["⚡ Almost there", almost, "#f5b942"], ["🛒 Need a grocery run", trip, "#64748b"]].map(([title, list, color]) => (
+        <div key={title}>
+          <h4 className="text-xs uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color }}>
+            {title} <span className="text-slate-600 font-mono">({list.length})</span>
+          </h4>
+          {list.length === 0 ? <p className="text-xs text-slate-600 mb-3">Nothing here yet.</p> : (
+            <div className="space-y-2 mb-2">
+              {list.map(r => (
+                <button key={r.id} onClick={() => onOpen(r.id)} className="w-full text-left rounded-xl p-3 bg-slate-900 border border-slate-800" style={{ borderLeft: `3px solid ${MEAL_META[r.meal].color}` }}>
+                  <div className="flex items-center justify-between mb-2 gap-3">
+                    <span className="text-sm font-semibold text-white">{r.name}</span>
+                    <span className="font-mono text-xs text-slate-600 shrink-0">{r.haveCount}/{r.total}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 rounded-full overflow-hidden bg-slate-800">
+                      <div className="h-full rounded-full transition-all" style={{ width: r.pct+"%", backgroundColor: color }} />
+                    </div>
+                    <span className="font-mono text-xs shrink-0" style={{ color }}>{r.pct}%</span>
+                  </div>
+                  {r.missing.length > 0 && r.missing.length <= 4 && (
+                    <p className="mt-1.5 text-xs text-slate-600">missing: {r.missing.map(m => m.name).join(", ")}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CookbookScreen({ haveIngredients, onToggleIngredient }) {
+  const [cbTab, setCbTab] = useState("browse");
+  const [selectedId, setSelectedId] = useState(null);
+  const selectedRecipe = selectedId ? COOKBOOK.find(r => r.id === selectedId) : null;
+
+  return (
+    <div>
+      <div className="flex gap-1.5 mb-4">
+        {[{id:"browse",label:"📖 Browse"},{id:"tonight",label:"🔥 Cook Tonight"}].map(t => (
+          <button key={t.id} onClick={() => setCbTab(t.id)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${cbTab===t.id ? "text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}
+            style={cbTab===t.id ? { backgroundColor:"#fb7a3c" } : {}}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {cbTab === "browse" && <CookbookBrowseTab haveIngredients={haveIngredients} onOpen={setSelectedId} />}
+      {cbTab === "tonight" && <CookTonightTab haveIngredients={haveIngredients} onToggleIngredient={onToggleIngredient} onOpen={setSelectedId} />}
+      {selectedRecipe && <CbRecipeDetail recipe={selectedRecipe} haveIngredients={haveIngredients} onToggleIngredient={onToggleIngredient} onClose={() => setSelectedId(null)} />}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── MAIN APP ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+const navItems = [
+  { id:"plan",     label:"Meal Plan",  emoji:"🍳" },
+  { id:"cookbook", label:"Cookbook",   emoji:"📖" },
+  { id:"jars",     label:"Jar Recipes",emoji:"🫙" },
+  { id:"prep",     label:"Prep Day",   emoji:"🗓️" },
+  { id:"cupboard", label:"Cupboard",   emoji:"🏠" },
+  { id:"shop",     label:"Shopping",   emoji:"🛒" },
+];
+
+const screenTitles = {
+  plan:     { title:"🍳 Keto Meal Plan",    sub:"4 Weeks · Sesame-free · Lactose-aware · Full flavour" },
+  shop:     { title:"🛒 Weekly Shopping",   sub:"Mapped to your meal plan · ⭐ = weekly staple" },
+  jars:     { title:"🫙 Jar Recipes",       sub:"7 overnight jars · Tap to expand · 3 min prep each" },
+  prep:     { title:"🗓️ Sunday Prep",       sub:"~90 min · Sets up your entire week" },
+  cupboard: { title:"🏠 What's In Stock",   sub:"Track pantry · Get AI meal ideas" },
+  cookbook: { title:"📖 The Walk-In",       sub:"25 recipes · Cook Tonight matches your kitchen" },
+};
+
+export default function KetoApp() {
+  const [screen, setScreen] = useState("plan");
+  const [shopChecked, setShopChecked] = useState({});
+  const [prepChecked, setPrepChecked] = useState({});
+  const [stock, setStock] = useState({});
+  // Shared ingredient state — Cupboard stock + Cookbook Cook Tonight both use this
+  const [cbIngredients, setCbIngredients] = useState(new Set());
+
+  const toggleShop  = (key)  => setShopChecked(prev => ({ ...prev, [key]: !prev[key] }));
+  const togglePrep  = (key)  => setPrepChecked(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleStock = (item) => setStock(prev => ({ ...prev, [item]: !prev[item] }));
+  const toggleCbIng = (name) => setCbIngredients(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+
+  const resetByPrefix = (prefix, setter) => {
+    setter(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(k => { if (k.startsWith(prefix)) delete next[k]; });
+      return next;
+    });
+  };
+
+  const s = screenTitles[screen];
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col" style={{ fontFamily:"'Georgia', serif" }}>
+      {/* ── Sticky Top Header ── */}
+      <div className="sticky top-0 z-20 bg-slate-900/95 backdrop-blur border-b border-slate-800">
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <h1 className="text-lg font-bold text-white">{s.title}</h1>
+          <p className="text-xs text-slate-400 mt-0.5">{s.sub}</p>
+        </div>
+      </div>
+
+      {/* ── Content ── */}
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-4 pb-28">
+        {screen === "plan"     && <MealPlanScreen />}
+        {screen === "shop"     && <ShoppingScreen checked={shopChecked} onToggle={toggleShop} onReset={(p) => resetByPrefix(p, setShopChecked)} />}
+        {screen === "jars"     && <JarsScreen />}
+        {screen === "prep"     && <PrepScreen checked={prepChecked} onToggle={togglePrep} onReset={(p) => resetByPrefix(p, setPrepChecked)} />}
+        {screen === "cupboard" && <CupboardScreen stock={stock} onToggleStock={toggleStock} />}
+        {screen === "cookbook" && <CookbookScreen haveIngredients={cbIngredients} onToggleIngredient={toggleCbIng} />}
+      </div>
+
+      {/* ── Bottom Nav ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-slate-900/98 backdrop-blur border-t border-slate-800">
+        <div className="max-w-2xl mx-auto flex">
+          {navItems.map(item => (
+            <button key={item.id} onClick={() => setScreen(item.id)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all ${screen===item.id ? "text-emerald-400" : "text-slate-500 hover:text-slate-300"}`}>
+              <span className="text-base">{item.emoji}</span>
+              <span className="font-medium" style={{fontSize:"9px"}}>{item.label}</span>
+              {screen===item.id && <div className="w-1 h-1 rounded-full bg-emerald-400 mt-0.5" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
