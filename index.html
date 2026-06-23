@@ -259,23 +259,136 @@ function CheckItem({ label, detail, checked, onToggle, colorKey }) {
 // ─── SCREEN: MEAL PLAN ───────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 const mealColors = {
-  breakfast: { label:"Breakfast", accent:"text-amber-400", dot:"bg-amber-400" },
-  lunch:     { label:"Lunch",     accent:"text-sky-400",   dot:"bg-sky-400"   },
-  dinner:    { label:"Dinner",    accent:"text-orange-400",dot:"bg-orange-400" },
+  breakfast: { label:"Breakfast", accent:"text-amber-400", dot:"bg-amber-400", border:"border-amber-500/40", bg:"bg-amber-500/5" },
+  lunch:     { label:"Lunch",     accent:"text-sky-400",   dot:"bg-sky-400",   border:"border-sky-500/40",   bg:"bg-sky-500/5"   },
+  dinner:    { label:"Dinner",    accent:"text-orange-400",dot:"bg-orange-400",border:"border-orange-500/40",bg:"bg-orange-500/5" },
 };
 const dayTypeStyles = {
-  weekday:      { badge:"bg-slate-800 text-slate-400", border:"border-slate-700/40" },
-  "weekend-light":{ badge:"bg-sky-900/40 text-sky-300", border:"border-sky-700/30" },
-  "prep-day":   { badge:"bg-amber-900/40 text-amber-300", border:"border-amber-700/30" },
+  weekday:        { badge:"bg-slate-800 text-slate-400", border:"border-slate-700/40" },
+  "weekend-light":{ badge:"bg-sky-900/40 text-sky-300",  border:"border-sky-700/30"   },
+  "prep-day":     { badge:"bg-amber-900/40 text-amber-300", border:"border-amber-700/30" },
 };
+
+// Find a cookbook recipe that best matches a meal plan meal name
+function findCookbookMatch(mealName) {
+  if (!mealName) return null;
+  const lower = mealName.toLowerCase();
+  // Try exact / close match first
+  let match = COOKBOOK.find(r => lower.includes(r.name.toLowerCase().split(" ").slice(0,2).join(" ").toLowerCase()));
+  if (!match) {
+    // keyword match on key proteins / techniques
+    const keywords = lower.split(/[\s,&–—]+/).filter(w => w.length > 4);
+    match = COOKBOOK.find(r => keywords.some(kw => r.name.toLowerCase().includes(kw)));
+  }
+  return match || null;
+}
+
+function MealPopup({ mealName, mealEmoji, mealType, onClose }) {
+  const mc = mealColors[mealType] || mealColors.breakfast;
+  const recipe = findCookbookMatch(mealName);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl">
+        {/* Header */}
+        <div className={`sticky top-0 z-10 px-5 py-4 border-b ${mc.border} bg-slate-900 flex items-center justify-between`}>
+          <div>
+            <div className={`text-xs font-bold uppercase tracking-widest ${mc.accent} mb-0.5`}>{mc.label}</div>
+            <h2 className="text-white font-bold text-base leading-snug">{mealEmoji} {mealName}</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl leading-none ml-4 flex-shrink-0">✕</button>
+        </div>
+
+        <div className="px-5 py-5">
+          {recipe ? (
+            <div className="space-y-5">
+              {/* Macros */}
+              <div className="grid grid-cols-4 gap-2">
+                {[["Cal",recipe.macros.cal,""],["Fat",recipe.macros.fat,"g"],["Protein",recipe.macros.protein,"g"],["Net C",recipe.macros.netCarb,"g"]].map(([label,val,unit]) => (
+                  <div key={label} className={`rounded-xl px-2 py-2.5 text-center ${mc.bg} border ${mc.border}`}>
+                    <div className={`text-sm font-bold ${mc.accent}`}>{val}{unit}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400">⏱ {recipe.time} min</span>
+                {recipe.flavor.map(f => <span key={f} className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 capitalize">{f}</span>)}
+                {recipe.grabGo && <span className="text-xs px-2.5 py-1 rounded-full bg-teal-900/40 text-teal-400 border border-teal-700/30">grab & go</span>}
+                {recipe.thermos && <span className="text-xs px-2.5 py-1 rounded-full bg-sky-900/40 text-sky-400 border border-sky-700/30">thermos ✓</span>}
+                {recipe.sundayPrep && <span className="text-xs px-2.5 py-1 rounded-full bg-amber-900/40 text-amber-400 border border-amber-700/30">Sunday prep</span>}
+              </div>
+
+              {/* Ingredients */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2.5">Ingredients</h4>
+                <div className="space-y-1.5">
+                  {recipe.ingredients.map((ing, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${mc.dot}`} />
+                      <span className="text-sm text-slate-200">{ing.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Method */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2.5">Method</h4>
+                <div className="space-y-3">
+                  {recipe.steps.map((step, i) => (
+                    <div key={i} className="flex gap-3">
+                      <span className={`text-xs font-bold font-mono shrink-0 mt-0.5 ${mc.accent}`}>{String(i+1).padStart(2,"0")}</span>
+                      <p className="text-sm text-slate-200 leading-relaxed">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // No cookbook match — show a nice placeholder
+            <div className="space-y-4">
+              <div className={`rounded-xl px-4 py-4 ${mc.bg} border ${mc.border}`}>
+                <p className="text-sm text-slate-300 leading-relaxed">This is a meal plan suggestion — adapt it to your taste and what's in the fridge. Check the 📖 Cookbook tab for similar full recipes.</p>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Quick Tips</h4>
+                <ul className="space-y-1.5 text-sm text-slate-300">
+                  <li className="flex gap-2"><span className={mc.accent}>•</span> Keep it keto — skip grains & sugar</li>
+                  <li className="flex gap-2"><span className={mc.accent}>•</span> No sesame, sunflower or poppy seeds</li>
+                  <li className="flex gap-2"><span className={mc.accent}>•</span> Use coconut or almond instead of dairy</li>
+                  <li className="flex gap-2"><span className={mc.accent}>•</span> Most dinners are under 20 min in the pan</li>
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function MealPlanScreen() {
   const [week, setWeek] = useState(0);
   const [openDays, setOpenDays] = useState({ Monday: true });
+  const [popup, setPopup] = useState(null); // { mealName, mealEmoji, mealType }
   const toggleDay = (d) => setOpenDays(p => ({ ...p, [d]: !p[d] }));
   const wk = mealWeeks[week];
+
   return (
     <div>
+      {popup && (
+        <MealPopup
+          mealName={popup.mealName}
+          mealEmoji={popup.mealEmoji}
+          mealType={popup.mealType}
+          onClose={() => setPopup(null)}
+        />
+      )}
+
       <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
         {mealWeeks.map((w, i) => (
           <button key={i} onClick={() => setWeek(i)}
@@ -284,6 +397,7 @@ function MealPlanScreen() {
           </button>
         ))}
       </div>
+
       <div className="space-y-2">
         {wk.days.map(day => {
           const ts = dayTypeStyles[day.type] || dayTypeStyles.weekday;
@@ -297,25 +411,30 @@ function MealPlanScreen() {
                 </div>
                 <span className={`text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
               </button>
+
               {isOpen && (
-                <div className="px-4 pb-4 space-y-3 border-t border-slate-700/40 pt-3">
+                <div className="px-4 pb-4 space-y-2 border-t border-slate-700/40 pt-3">
                   {["breakfast","lunch","dinner"].map(mk => {
                     const meal = day[mk]; const mc = mealColors[mk];
                     return (
-                      <div key={mk} className="flex gap-3">
+                      <button
+                        key={mk}
+                        onClick={() => setPopup({ mealName: meal.meal, mealEmoji: meal.emoji, mealType: mk })}
+                        className={`w-full flex gap-3 rounded-xl px-3 py-2.5 text-left transition-all hover:brightness-110 active:scale-[0.98] border ${mc.border} ${mc.bg}`}
+                      >
                         <div className="flex flex-col items-center pt-1">
                           <div className={`w-2 h-2 rounded-full ${mc.dot} mt-1`} />
-                          <div className="w-px flex-1 bg-slate-700/40 mt-1" />
                         </div>
-                        <div className="flex-1 pb-1">
-                          <div className={`text-xs font-bold uppercase tracking-widest ${mc.accent} mb-1`}>{mc.label}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-xs font-bold uppercase tracking-widest ${mc.accent} mb-0.5`}>{mc.label}</div>
                           <div className="text-sm text-white font-medium leading-snug">{meal.emoji} {meal.meal}</div>
-                          <div className="text-xs text-slate-400 mt-0.5">{meal.note}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">{meal.note} · tap for recipe</div>
                         </div>
-                      </div>
+                        <span className="text-slate-600 text-sm self-center flex-shrink-0">›</span>
+                      </button>
                     );
                   })}
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 px-3 py-2">
                     <div className="pt-1"><div className="w-2 h-2 rounded-full bg-pink-400 mt-1" /></div>
                     <div><div className="text-xs font-bold uppercase tracking-widest text-pink-400 mb-1">Fruit</div>
                     <div className="text-sm text-white">🍓 {day.fruit}</div></div>
@@ -590,14 +709,21 @@ function PrepScreen({ checked, onToggle, onReset }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // ─── SCREEN: CUPBOARD ────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
-function CupboardScreen({ stock, onToggleStock }) {
+function CupboardScreen({ stock, onToggleStock, onResetStock }) {
   const [activeTab, setActiveTab] = useState("stock");
   const [aiSuggestion, setAiSuggestion] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [openCats, setOpenCats] = useState({ proteins: true });
+  const [search, setSearch] = useState("");
+  const [confirmReset, setConfirmReset] = useState(false);
   const stockList = Object.keys(stock).filter(k => stock[k]);
   const planMatches = matchMealsToStock(stockList);
   const toggleCat = (id) => setOpenCats(p => ({ ...p, [id]: !p[id] }));
+
+  const handleReset = () => {
+    if (confirmReset) { onResetStock(); setConfirmReset(false); }
+    else { setConfirmReset(true); setTimeout(() => setConfirmReset(false), 3000); }
+  };
 
   const getAiSuggestions = async () => {
     if (!stockList.length) return;
@@ -617,6 +743,13 @@ function CupboardScreen({ stock, onToggleStock }) {
     setAiLoading(false);
   };
 
+  // Filter categories + items by search
+  const searchLower = search.toLowerCase();
+  const filteredCats = cupboardCategories.map(cat => ({
+    ...cat,
+    items: search ? cat.items.filter(item => item.toLowerCase().includes(searchLower)) : cat.items,
+  })).filter(cat => cat.items.length > 0);
+
   return (
     <div>
       <div className="flex gap-1.5 mb-4">
@@ -630,30 +763,67 @@ function CupboardScreen({ stock, onToggleStock }) {
 
       {activeTab === "stock" && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-slate-400">{stockList.length} items in stock</p>
-            {stockList.length > 0 && <button onClick={() => stockList.forEach(k => onToggleStock(k))} className="text-xs text-rose-400 hover:text-rose-300">Clear all</button>}
+          {/* Search bar */}
+          <div className="relative mb-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search cupboard…"
+              className="w-full rounded-lg pl-9 pr-8 py-2.5 text-sm bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-violet-500 transition-colors"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-sm">✕</button>
+            )}
           </div>
-          {stockList.length > 0 && (
-            <div className="bg-emerald-950/30 border border-emerald-700/30 rounded-xl px-3 py-2 mb-2">
-              <p className="text-xs text-emerald-300 font-bold mb-1">✅ {stockList.length} items stocked</p>
+
+          {/* Stock count + reset */}
+          <div className="flex items-center justify-between py-1">
+            <p className="text-xs text-slate-400">
+              <span className="text-emerald-400 font-bold">{stockList.length}</span> items saved in stock
+            </p>
+            {stockList.length > 0 && (
+              <button
+                onClick={handleReset}
+                className={`text-xs px-3 py-1 rounded-lg border transition-all font-medium ${confirmReset ? "bg-rose-500 border-rose-500 text-white" : "border-slate-600 text-slate-400 hover:border-rose-500 hover:text-rose-400"}`}>
+                {confirmReset ? "⚠️ Tap again to confirm" : "Reset stock"}
+              </button>
+            )}
+          </div>
+
+          {/* Stocked summary chips */}
+          {stockList.length > 0 && !search && (
+            <div className="bg-emerald-950/30 border border-emerald-700/30 rounded-xl px-3 py-2.5">
+              <p className="text-xs text-emerald-300 font-bold mb-1.5">✅ Currently stocked</p>
               <div className="flex flex-wrap gap-1">
-                {stockList.map(item => <span key={item} className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">{item}</span>)}
+                {stockList.map(item => (
+                  <button key={item} onClick={() => onToggleStock(item)}
+                    className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 transition-colors">
+                    {item} ✕
+                  </button>
+                ))}
               </div>
             </div>
           )}
-          {cupboardCategories.map(cat => {
+
+          {/* Category grids */}
+          {filteredCats.length === 0 && search && (
+            <div className="bg-slate-800/50 rounded-xl px-4 py-6 text-center">
+              <p className="text-sm text-slate-400">No items match "{search}"</p>
+            </div>
+          )}
+          {filteredCats.map(cat => {
             const c = cMap[cat.color] || cMap.slate;
-            const isOpen = openCats[cat.id];
+            const isOpen = search ? true : openCats[cat.id];
             const catCount = cat.items.filter(item => stock[item]).length;
             return (
               <div key={cat.id} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
-                <button onClick={() => toggleCat(cat.id)} className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/5 transition-colors">
+                <button onClick={() => !search && toggleCat(cat.id)} className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-2">
                     <span className={`font-bold text-sm ${c.header}`}>{cat.label}</span>
                     {catCount > 0 && <span className={`text-xs px-2 py-0.5 rounded-full ${c.badge}`}>{catCount} in stock</span>}
                   </div>
-                  <span className={`text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                  {!search && <span className={`text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>}
                 </button>
                 {isOpen && (
                   <div className="px-4 pb-3 border-t border-white/5 pt-2">
@@ -677,7 +847,7 @@ function CupboardScreen({ stock, onToggleStock }) {
             );
           })}
           <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl px-4 py-3 mt-2">
-            <p className="text-xs text-slate-400">💡 Stock you tick here also powers the Walk-In Cookbook's Cook Tonight tab — it'll rank what you can make right now.</p>
+            <p className="text-xs text-slate-400">💡 Your stock is saved automatically and persists when you close the app. Tap "Reset stock" to start fresh.</p>
           </div>
         </div>
       )}
@@ -1026,13 +1196,27 @@ function KetoApp() {
   const [screen, setScreen] = useState("plan");
   const [shopChecked, setShopChecked] = useState({});
   const [prepChecked, setPrepChecked] = useState({});
-  const [stock, setStock] = useState({});
-  // Shared ingredient state — Cupboard stock + Cookbook Cook Tonight both use this
   const [cbIngredients, setCbIngredients] = useState(new Set());
+
+  // Load stock from localStorage on first render
+  const [stock, setStock] = useState(() => {
+    try { const saved = localStorage.getItem("keto-cupboard-stock"); return saved ? JSON.parse(saved) : {}; }
+    catch { return {}; }
+  });
+
+  // Save stock to localStorage whenever it changes
+  const saveStock = (newStock) => {
+    try { localStorage.setItem("keto-cupboard-stock", JSON.stringify(newStock)); } catch {}
+  };
 
   const toggleShop  = (key)  => setShopChecked(prev => ({ ...prev, [key]: !prev[key] }));
   const togglePrep  = (key)  => setPrepChecked(prev => ({ ...prev, [key]: !prev[key] }));
-  const toggleStock = (item) => setStock(prev => ({ ...prev, [item]: !prev[item] }));
+  const toggleStock = (item) => setStock(prev => {
+    const next = { ...prev, [item]: !prev[item] };
+    saveStock(next);
+    return next;
+  });
+  const resetStock = () => { setStock({}); saveStock({}); };
   const toggleCbIng = (name) => setCbIngredients(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
 
   const resetByPrefix = (prefix, setter) => {
@@ -1061,7 +1245,7 @@ function KetoApp() {
         {screen === "shop"     && <ShoppingScreen checked={shopChecked} onToggle={toggleShop} onReset={(p) => resetByPrefix(p, setShopChecked)} />}
         {screen === "jars"     && <JarsScreen />}
         {screen === "prep"     && <PrepScreen checked={prepChecked} onToggle={togglePrep} onReset={(p) => resetByPrefix(p, setPrepChecked)} />}
-        {screen === "cupboard" && <CupboardScreen stock={stock} onToggleStock={toggleStock} />}
+        {screen === "cupboard" && <CupboardScreen stock={stock} onToggleStock={toggleStock} onResetStock={resetStock} />}
         {screen === "cookbook" && <CookbookScreen haveIngredients={cbIngredients} onToggleIngredient={toggleCbIng} />}
       </div>
 
